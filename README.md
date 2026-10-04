@@ -2,10 +2,6 @@
 
 This repository contains the software architecture and design documentation for the Orion Threat Intelligence agent. 
 
-## Contents
-* **docs/**: Contains the final Stage 1 PDF report and exported UML diagrams.
-* **uml/**: Contains the raw, editable `.uxf` files created using UMLet.
-
 ## Architecture Overview
 The system relies on a hybrid deterministic and non-deterministic AI architecture, utilizing five core design patterns:
 1. **Observer**: For asynchronous UI updates.
