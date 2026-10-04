@@ -1,5 +1,7 @@
 # Orion Threat Intelligence 
 
+This is the project for EECS 3311 Fall 2026 course at York University 
+
 This repository contains the software architecture and design documentation for the Orion Threat Intelligence agent. 
 
 ## Architecture Overview
