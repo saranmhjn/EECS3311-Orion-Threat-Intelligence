@@ -16,7 +16,7 @@ public class AgentControllerTest {
     private DatabaseManager dbManager;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws Exception{
         // Initialize an in-memory or local test database connection
         dbManager = new DatabaseManager();
         controller = new AgentController(dbManager);
