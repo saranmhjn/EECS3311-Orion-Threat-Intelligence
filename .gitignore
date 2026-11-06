@@ -1,0 +1,7 @@
+target/
+*.class
+.vscode/
+.env
+.env.*
+config.local.json
+orion.db
