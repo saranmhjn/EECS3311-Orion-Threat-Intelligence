@@ -31,6 +31,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -72,74 +73,47 @@ public class OrionGUI extends Application implements SecurityObserver {
             InputStream iconStream = getClass().getResourceAsStream("/logo.png");
             if (iconStream == null) {
                 File file = new File("logo.png");
-                if (file.exists()) {
-                    iconStream = new java.io.FileInputStream(file);
-                }
+                if (file.exists()) iconStream = new FileInputStream(file);
             }
             if (iconStream != null) {
                 primaryStage.getIcons().add(new Image(iconStream));
             }
-        } catch (Exception e) {
-            // Fallback gracefully if icon cannot be loaded
-        }
+        } catch (Exception ignored) {}
 
-        // --- 1. DYNAMIC BRAND LOGO ---
+        // --- 1. VECTOR BRAND LOGO (Header) ---
         HBox brandingContainer = new HBox(15);
         brandingContainer.setAlignment(Pos.CENTER);
         brandingContainer.setPadding(new Insets(10, 0, 15, 0));
 
-        Node finalLogo;
-        try {
-            InputStream logoStream = getClass().getResourceAsStream("/logo.png");
-            if (logoStream != null) {
-                Image logoImg = new Image(logoStream);
-                ImageView logoView = new ImageView(logoImg);
-                
-                // INCREASED SIZES FOR A PROMINENT LOGO
-                logoView.setFitWidth(180);
-                logoView.setFitHeight(180);
-                logoView.setPreserveRatio(true);
-                logoView.setSmooth(true);
-                
-                finalLogo = logoView;
-            } else {
-                throw new Exception("PNG not found");
-            }
-        } catch (Exception e) {
-            StackPane vectorLogo = new StackPane();
-            vectorLogo.setPrefSize(50, 50);
+        StackPane vectorLogo = new StackPane();
+        vectorLogo.setPrefSize(50, 50);
 
-            Circle outerOrbit = new Circle(24);
-            outerOrbit.setFill(Color.TRANSPARENT);
-            outerOrbit.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, Color.web("#00f2fe")),
-                    new Stop(1, Color.web("#e94057"))));
-            outerOrbit.setStrokeWidth(2.5);
-            outerOrbit.setStyle("-fx-effect: dropshadow(gaussian, rgba(0, 242, 254, 0.45), 6, 0, 0, 0);");
+        Circle outerOrbit = new Circle(24);
+        outerOrbit.setFill(Color.TRANSPARENT);
+        outerOrbit.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.web("#00f2fe")),
+                new Stop(1, Color.web("#e94057"))));
+        outerOrbit.setStrokeWidth(2.5);
+        outerOrbit.setStyle("-fx-effect: dropshadow(gaussian, rgba(0, 242, 254, 0.45), 6, 0, 0, 0);");
 
-            Circle innerShield = new Circle(18);
-            innerShield.setFill(Color.web("#161233"));
-            innerShield.setStroke(Color.web("#8a2387"));
-            innerShield.setStrokeWidth(1.5);
+        Circle innerShield = new Circle(18);
+        innerShield.setFill(Color.web("#161233"));
+        innerShield.setStroke(Color.web("#8a2387"));
+        innerShield.setStrokeWidth(1.5);
 
-            Label crestText = new Label("O");
-            crestText.setStyle("-fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, #e94057, 5, 0, 0, 0);");
+        Label crestText = new Label("O");
+        crestText.setStyle("-fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, #e94057, 5, 0, 0, 0);");
 
-            vectorLogo.getChildren().addAll(outerOrbit, innerShield, crestText);
-            finalLogo = vectorLogo;
-        }
-        
-        brandingContainer.getChildren().add(finalLogo);
+        vectorLogo.getChildren().addAll(outerOrbit, innerShield, crestText);
+        brandingContainer.getChildren().add(vectorLogo);
 
         VBox titleArea = new VBox(2);
         titleArea.setAlignment(Pos.CENTER_LEFT);
-        Label title1 = new Label("ORION");
-        title1.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 2);");
-        Label title2 = new Label("THREAT INTELLIGENCE");
-        title2.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 2);");
+        Label title = new Label("ORION - THREAT INTELLIGENCE");
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 2);");
         Label subtitle = new Label("What can I help you investigate today?");
-        subtitle.setStyle("-fx-font-size: 18px; -fx-text-fill: #a0a0b5; -fx-font-weight: bold;");
-        titleArea.getChildren().addAll(title1, title2, subtitle);
+        subtitle.setStyle("-fx-font-size: 16px; -fx-text-fill: #a0a0b5; -fx-font-weight: bold;");
+        titleArea.getChildren().addAll(title, subtitle);
         brandingContainer.getChildren().add(titleArea);
 
         // --- 2. TABLE SEARCH & SEVERITY FILTERS (Grouped Together) ---
