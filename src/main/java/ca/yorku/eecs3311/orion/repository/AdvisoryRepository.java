@@ -92,6 +92,30 @@ public class AdvisoryRepository {
     }
 
     /**
+     * Retrieves all threat advisories currently stored in the database.
+     */
+    /*@ ensures \result != null; @*/
+    public List<ThreatAdvisory> findAll() {
+        List<ThreatAdvisory> results = new ArrayList<>();
+        String querySQL = "SELECT id, title, severity, description FROM threat_advisories";
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(querySQL)) {
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                results.add(new ThreatAdvisory(
+                    rs.getString("id"),
+                    rs.getString("title"),
+                    rs.getString("severity"),
+                    rs.getString("description")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
+    }
+
+    /**
      * Finds a list of advisories matching specific filter criteria.
      * Implements Feature F08 (Filter Historical Advisory Repository).
      */

@@ -6,3 +6,4 @@ target/
 config.local.json
 orion.db
 !.env.example
+report.md

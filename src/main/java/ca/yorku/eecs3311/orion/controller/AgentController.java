@@ -72,7 +72,7 @@ public class AgentController {
             notifyObservers("SYNC_STARTED", source);
             
             String rawData = apiClient.fetchRawAdvisories();
-            AdvisoryParser parser = parserFactory.createParser("JSON");
+            AdvisoryParser parser = parserFactory.createParser("CISA");
             List<ThreatAdvisory> advisories = parser.parse(rawData);
             advisoryRepo.saveAll(advisories);
             
@@ -255,5 +255,15 @@ public class AgentController {
             notifyObservers("LOG_ERROR", e.getMessage());
             return new java.util.ArrayList<>();
         }
+    }
+    /**
+     * Retrieves all stored threat advisories from the local repository.
+     * Used by boundary layers (GUI/CLI) to populate dashboards.
+     * 
+     * @return A list of all stored ThreatAdvisory objects.
+     */
+    /*@ ensures \result != null; @*/
+    public List<ThreatAdvisory> getStoredAdvisories() {
+        return advisoryRepo.findAll();
     }
 }

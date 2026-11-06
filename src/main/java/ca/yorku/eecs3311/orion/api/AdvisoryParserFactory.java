@@ -17,11 +17,11 @@ public class AdvisoryParserFactory {
       @ ensures \result != null;
       @*/
     public AdvisoryParser createParser(String format) {
-        // We can easily add "XML" here in the future for CISA KEV
-        if ("JSON".equalsIgnoreCase(format)) {
+        if ("CISA".equalsIgnoreCase(format)) {
+            return new CisaKevParser();
+        } else if ("JSON".equalsIgnoreCase(format)) {
             return new NvdJsonParser();
         }
-        // Default fallback
-        return new NvdJsonParser();
+        return new CisaKevParser(); // Default to the upgraded CISA feed
     }
 }

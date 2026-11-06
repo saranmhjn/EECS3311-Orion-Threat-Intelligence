@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,7 +22,7 @@ public class GeminiLLMClient implements LLMClient {
     private HttpClient httpClient;
     private ObjectMapper objectMapper;
     
-    private static final String API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
+    private static final String API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=";
 
     /*@ public invariant apiKey != null; @*/
     /*@ public invariant httpClient != null; @*/
@@ -33,39 +35,51 @@ public class GeminiLLMClient implements LLMClient {
       @ ensures this.objectMapper != null;
       @*/
     public GeminiLLMClient() {
-        this.httpClient = HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper();
-        
-        String envKey = System.getenv("GEMINI_API_KEY");
-        this.apiKey = (envKey != null && !envKey.isEmpty()) ? envKey : "MISSING_API_KEY";
+    this.httpClient = HttpClient.newHttpClient();
+    this.objectMapper = new ObjectMapper();
+
+    // Attempt to load from .env file, fallback to system env
+    String envKey = null;
+    try {
+        Dotenv dotenv = Dotenv.load();
+        envKey = dotenv.get("GEMINI_API_KEY");
+    } catch (Exception e) {
+        envKey = System.getenv("GEMINI_API_KEY");
     }
+
+    this.apiKey = (envKey != null && !envKey.isEmpty()) ? envKey : "MISSING_API_KEY";
+}
 
     @Override
     public String generate(String prompt) throws Exception {
         if ("MISSING_API_KEY".equals(this.apiKey)) {
-            // Fails gracefully if the environment variable isn't set yet
             return "[Offline Simulation] Gemini API Key missing. Prompt received: " + prompt;
         }
 
-        // 1. Build the strictly formatted JSON request body required by Google
         String requestBody = buildRequestBody(prompt);
-
-        // 2. Construct the HTTP POST request
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_BASE_URL + this.apiKey))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
-        // 3. Send the request and capture the response
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 200) {
-            throw new Exception("LLM API Error (HTTP " + response.statusCode() + "): " + response.body());
+            if (response.statusCode() == 200) {
+                return parseResponseBody(response.body());
+            } else if (response.statusCode() == 503) {
+                if (i == maxRetries - 1) {
+                    throw new Exception("LLM API Error (HTTP 503): Gemini servers remain overloaded after 3 retries.");
+                }
+                // Wait 2 seconds, then 4 seconds before retrying
+                Thread.sleep(2000 * (i + 1));
+            } else {
+                throw new Exception("LLM API Error (HTTP " + response.statusCode() + "): " + response.body());
+            }
         }
-
-        // 4. Parse the AI's generated text from the deep JSON response tree
-        return parseResponseBody(response.body());
+        return "Warning: AI request failed.";
     }
 
     /**

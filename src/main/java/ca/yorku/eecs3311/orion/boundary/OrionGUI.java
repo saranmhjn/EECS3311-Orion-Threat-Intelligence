@@ -13,6 +13,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
+import javafx.scene.control.SelectionMode;
 
 import java.util.List;
 
@@ -49,13 +56,128 @@ public class OrionGUI extends Application implements SecurityObserver {
         primaryStage.setTitle("Orion Threat Intelligence");
 
         threatTable = new TableView<>();
+        threatTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        
+        // Define columns for ThreatAdvisory
+        TableColumn<ThreatAdvisory, String> idCol = new TableColumn<>("CVE ID / Title");
+        idCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getId())); // Adjust method name if needed (e.g. getCveId())
+        
+        TableColumn<ThreatAdvisory, String> severityCol = new TableColumn<>("Severity");
+        severityCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getSeverity()));
+        
+        TableColumn<ThreatAdvisory, String> descCol = new TableColumn<>("Description");
+        descCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+
+        threatTable.getColumns().addAll(idCol, severityCol, descCol);
+        threatTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        
         queryInput = new TextField();
         queryInput.setPromptText("Ask the AI about the threat landscape (e.g., 'What are zero-day threats?')...");
         
         displayArea = new TextArea();
         displayArea.setEditable(false);
 
-        VBox root = new VBox(10, threatTable, displayArea, queryInput);
+// --- ROW 1: Advisory-Specific AI Features ---
+        Button syncBtn = new Button("Sync CISA KEV Feeds (F01)");
+        syncBtn.setOnAction(e -> {
+            displayArea.appendText("[System] Initiating CISA KEV sync...\n");
+            new Thread(() -> controller.syncFeeds("CISA")).start(); 
+        });
+
+        Button summaryBtn = new Button("Summarize Selected (F02)");
+        summaryBtn.setOnAction(e -> {
+            ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                displayArea.appendText("[System] Generating AI summary for " + selected.getId() + "...\n");
+                new Thread(() -> displaySummary(controller.summarizeAdvisory(selected.getId()))).start();
+            } else {
+                showError("Please select an advisory from the table first.");
+            }
+        });
+
+        Button mitigateBtn = new Button("Generate Mitigation (F05)");
+        mitigateBtn.setOnAction(e -> {
+            ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                displayArea.appendText("[System] Generating AI mitigation playbook...\n");
+                new Thread(() -> displaySummary(controller.generateMitigationPlaybook(selected.getId(), "Standard Enterprise Environment"))).start();
+            } else {
+                showError("Please select an advisory from the table first.");
+            }
+        });
+
+        Button triageBtn = new Button("Auto-Triage (F09)");
+        triageBtn.setOnAction(e -> {
+            ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                displayArea.appendText("[System] Evaluating dynamic triage...\n");
+                new Thread(() -> displaySummary(controller.evaluateAdvisoryTriage(selected.getId(), "Windows Server, AWS Cloud"))).start();
+            } else {
+                showError("Please select an advisory from the table first.");
+            }
+        });
+
+        Button gapBtn = new Button("Gap Analysis (F10)");
+        gapBtn.setOnAction(e -> {
+            ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                displayArea.appendText("[System] Evaluating security gaps...\n");
+                new Thread(() -> displaySummary(controller.evaluateSecurityGaps(selected.getId(), java.util.List.of("Firewall", "EDR")))).start();
+            } else {
+                showError("Please select an advisory from the table first.");
+            }
+        });
+
+        // --- ROW 2: Utility & System Features ---
+        Button correlateBtn = new Button("Correlate Logs (F04)");
+        correlateBtn.setOnAction(e -> {
+            displayArea.appendText("[System] Correlating internal logs...\n");
+            new Thread(() -> {
+                java.util.List<String> anomalies = controller.correlateLogs(""); // Uses your fallback simulation
+                Platform.runLater(() -> displayArea.appendText("Anomalies Found:\n" + String.join("\n", anomalies) + "\n\n"));
+            }).start();
+        });
+
+        Button extractBtn = new Button("Extract IoCs (F06)");
+        extractBtn.setOnAction(e -> {
+            String text = queryInput.getText();
+            if (text.isEmpty()) {
+                showError("Please paste text containing IPs or Hashes into the query box first.");
+                return;
+            }
+            displayArea.appendText("[System] Extracting IoCs from text...\n");
+            new Thread(() -> {
+                java.util.List<String> iocs = controller.extractIocsFromText(text);
+                Platform.runLater(() -> displayArea.appendText("Extracted IoCs:\n" + String.join("\n", iocs) + "\n\n"));
+            }).start();
+        });
+
+        Button exportBtn = new Button("Export Briefing (F07)");
+        exportBtn.setOnAction(e -> {
+            // Grab all selected rows
+            java.util.List<ThreatAdvisory> selected = threatTable.getSelectionModel().getSelectedItems();
+
+            if (selected.isEmpty()) {
+                showError("Please select at least one advisory from the table to export.");
+                return;
+            }
+
+            displayArea.appendText("[System] Exporting report to report.md...\n");
+            new Thread(() -> {
+                // Export only the selected items
+                boolean success = controller.exportThreatBriefing(new java.util.ArrayList<>(selected), "report.md");
+                Platform.runLater(() -> displayArea.appendText(success ? "[System] Export complete.\n" : "[System] Export failed.\n"));
+            }).start();
+     });
+        
+
+        // Layout the buttons horizontally
+        HBox row1 = new HBox(10, syncBtn, summaryBtn, mitigateBtn, triageBtn, gapBtn);
+        HBox row2 = new HBox(10, correlateBtn, extractBtn, exportBtn);
+        
+        // Replace your old VBox root instantiation with this one:
+        VBox root = new VBox(10, row1, row2, threatTable, displayArea, queryInput);
+
         Scene scene = new Scene(root, 800, 600);
 
         // Event handler for Natural Language Querying (Feature F03)
@@ -69,14 +191,27 @@ public class OrionGUI extends Application implements SecurityObserver {
             displaySummary(response);
         });
 
+           
+       // Fetch existing advisories from database on startup via the Controller
+        List<ThreatAdvisory> initialThreats = controller.getStoredAdvisories();
+        displayThreats(initialThreats);
+
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
+    /**
+     * Fills the TableView with fetched threat advisories safely on the JavaFX thread.
+     */
     /*@ requires threats != null; @*/
     public void displayThreats(List<ThreatAdvisory> threats) {
-        // Implementation stub for populating the TableView
+        Platform.runLater(() -> {
+            ObservableList<ThreatAdvisory> data = FXCollections.observableArrayList(threats);
+            threatTable.setItems(data);
+        });
     }
+
+    
 
     /*@ requires summary != null; @*/
     public void displaySummary(String summary) {
@@ -102,6 +237,11 @@ public class OrionGUI extends Application implements SecurityObserver {
         Platform.runLater(() -> {
             if ("SYNC_COMPLETE".equals(eventType)) {
                 displayArea.appendText("[System] Sync completed successfully. " + data + " records processed.\n");
+                
+                // NEW: Refresh the table view with the newly synced data
+                List<ThreatAdvisory> updatedThreats = controller.getStoredAdvisories();
+                displayThreats(updatedThreats);
+                
             } else if ("SYNC_ERROR".equals(eventType)) {
                 showError(data.toString());
             }

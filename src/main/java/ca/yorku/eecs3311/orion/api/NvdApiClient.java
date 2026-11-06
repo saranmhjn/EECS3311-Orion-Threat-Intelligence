@@ -11,7 +11,8 @@ import java.net.http.HttpResponse;
  */
 public class NvdApiClient {
 
-    private static final String API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0/?resultsPerPage=5";
+    //CISA Known Exploited Vulnerabilities (KEV) feed URL
+    private static final String API_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
     private final HttpClient httpClient;
 
     /*@ public invariant httpClient != null; @*/
