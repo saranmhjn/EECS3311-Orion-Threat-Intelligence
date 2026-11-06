@@ -1,5 +1,7 @@
 package ca.yorku.eecs3311.orion.llm;
 
+import java.util.List;
+
 import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 
 /**
@@ -82,7 +84,7 @@ public class PromptBuilder {
                "Base Severity: " + advisory.getSeverity() + "\n" +
                "Description: " + advisory.getDescription();
     }
-    
+
     /**
      * Builds a prompt for dynamic vulnerability triage and priority scoring.
      * Maps to Feature F09.
@@ -103,5 +105,25 @@ public class PromptBuilder {
                "Description: " + advisory.getDescription() + "\n\n" +
                "Target Enterprise Tech Stack: " + techStack + "\n" +
                "Provide the calibrated priority score and a brief tactical justification.";
+    }
+
+    /**
+     * Builds a prompt for evaluating enterprise security control gaps against a threat.
+     * Maps to Feature F10[cite: 9, 10].
+     * 
+     * @param advisory The target threat advisory.
+     * @param controls List of active enterprise security controls.
+     * @return A constrained prompt string.
+     */
+    /*@ 
+      @ requires advisory != null && controls != null;
+      @ ensures \result != null && \result.length() > 0;
+      @*/
+    public String buildGapAnalysisPrompt(ThreatAdvisory advisory, List<String> controls) {
+        return "Perform a Security Control Gap Analysis for vulnerability " + advisory.getId() + 
+               " (" + advisory.getTitle() + ")\n" +
+               "Description: " + advisory.getDescription() + "\n\n" +
+               "Active Enterprise Security Controls: " + String.join(", ", controls) + "\n\n" +
+               "Identify unmitigated attack vectors and provide a structured gap matrix with recommendations.";
     }
 }

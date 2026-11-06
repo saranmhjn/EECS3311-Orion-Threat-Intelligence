@@ -207,4 +207,27 @@ public class AgentController {
         notifyObservers("MITIGATION_GENERATED", cveId);
         return playbook;
     }
+
+    /**
+     * Evaluates security control gaps for a stored threat advisory.
+     * Maps to Feature F10 and Use Case UC-08[cite: 9, 21, 36].
+     * 
+     * @param cveId The CVE identifier.
+     * @param activeControls List of configured enterprise security controls.
+     * @return The structured gap analysis result.
+     */
+    /*@ 
+      @ requires cveId != null && activeControls != null;
+      @ ensures \result != null;
+      @*/
+    public String evaluateSecurityGaps(String cveId, List<String> activeControls) {
+        ThreatAdvisory advisory = advisoryRepo.findById(cveId);
+        if (advisory == null) {
+            return "Error: Advisory with ID " + cveId + " not found in local database.";
+        }
+        
+        String analysis = agentFacade.evaluateGaps(advisory, activeControls);
+        notifyObservers("GAP_ANALYSIS_EVALUATED", cveId);
+        return analysis;
+    }
 }

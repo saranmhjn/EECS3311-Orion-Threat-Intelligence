@@ -4,6 +4,7 @@ import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 import ca.yorku.eecs3311.orion.tool.LogParserTool;
 import ca.yorku.eecs3311.orion.tool.ToolManager;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -126,6 +127,27 @@ public class AgentFacade {
             return llmClient.generate(prompt);
         } catch (Exception e) {
             return "Mitigation Planning Error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Evaluates active enterprise security controls against a threat profile.
+     * Maps to Feature F10 and Use Case UC-08[cite: 9, 21, 36].
+     * 
+     * @param advisory The ThreatAdvisory to evaluate.
+     * @param controls List of active security controls.
+     * @return The AI-generated gap analysis matrix.
+     */
+    /*@ 
+      @ requires advisory != null && controls != null;
+      @ ensures \result != null;
+      @*/
+    public String evaluateGaps(ThreatAdvisory advisory, List<String> controls) {
+        try {
+            String prompt = promptBuilder.buildGapAnalysisPrompt(advisory, controls);
+            return llmClient.generate(prompt);
+        } catch (Exception e) {
+            return "Gap Analysis Error: " + e.getMessage();
         }
     }
 }
