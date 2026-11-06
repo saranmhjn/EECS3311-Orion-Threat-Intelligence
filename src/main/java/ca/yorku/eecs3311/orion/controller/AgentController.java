@@ -3,6 +3,8 @@ package ca.yorku.eecs3311.orion.controller;
 import ca.yorku.eecs3311.orion.api.AdvisoryParser;
 import ca.yorku.eecs3311.orion.api.AdvisoryParserFactory;
 import ca.yorku.eecs3311.orion.api.NvdApiClient;
+import ca.yorku.eecs3311.orion.command.CommandManager;
+import ca.yorku.eecs3311.orion.command.SecurityCommand;
 import ca.yorku.eecs3311.orion.database.DatabaseManager;
 import ca.yorku.eecs3311.orion.llm.AgentFacade;
 import ca.yorku.eecs3311.orion.llm.GeminiLLMClient;
@@ -19,14 +21,16 @@ public class AgentController {
     private AdvisoryRepository advisoryRepo;
     private NvdApiClient apiClient;
     private AdvisoryParserFactory parserFactory;
-    
-    // Added the AI orchestration layer
     private AgentFacade agentFacade;
+    
+    // Added the command execution manager
+    private CommandManager commandManager;
 
     /*@ public invariant advisoryRepo != null; @*/
     /*@ public invariant apiClient != null; @*/
     /*@ public invariant parserFactory != null; @*/
     /*@ public invariant agentFacade != null; @*/
+    /*@ public invariant commandManager != null; @*/
 
     /*@ 
       @ requires dbManager != null;
@@ -35,14 +39,13 @@ public class AgentController {
         this.advisoryRepo = new AdvisoryRepository(dbManager.getConnection());
         this.apiClient = new NvdApiClient();
         this.parserFactory = new AdvisoryParserFactory();
-        
-        // Initialize the AI Facade with our specific Gemini client
         this.agentFacade = new AgentFacade(new GeminiLLMClient());
+        
+        // Initialize the command manager to track defensive actions
+        this.commandManager = new CommandManager();
     }
 
-    /*@
-      @ requires source != null && source.length() > 0;
-      @*/
+    /*@ requires source != null && source.length() > 0; @*/
     public void syncFeeds(String source) {
         try {
             String rawData = apiClient.fetchRawAdvisories();
@@ -55,19 +58,27 @@ public class AgentController {
         }
     }
 
-    /**
-     * Bridges the boundary layer (GUI/CLI) to the AI reasoning engine.
-     * Maps to Feature F03 and Sequence Diagram SD-01.
-     * 
-     * @param query The user's chat input.
-     * @return The AI-generated contextual response.
-     */
     /*@
       @ requires query != null && query.length() > 0;
       @ ensures \result != null;
       @*/
     public String handleNaturalQuery(String query) {
-        // Delegates complex prompt building and API calls to the Facade
         return agentFacade.processGoal(query);
+    }
+    
+    /**
+     * Executes an AI-generated security mitigation.
+     * Maps to Feature F05 and SD-03.
+     */
+    /*@ requires cmd != null; @*/
+    public boolean executeCommand(SecurityCommand cmd) {
+        return commandManager.invoke(cmd);
+    }
+    
+    /**
+     * Rolls back the last executed security mitigation.
+     */
+    public boolean undoLastCommand() {
+        return commandManager.undoLast();
     }
 }
