@@ -21,6 +21,7 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.SplitPane;
 import javafx.scene.web.WebView;
 
 import java.util.List;
@@ -85,9 +86,16 @@ public class OrionGUI extends Application implements SecurityObserver {
 
         TableColumn<ThreatAdvisory, String> descCol = new TableColumn<>("Description");
         descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-        descCol.setPrefWidth(300);
+        descCol.setPrefWidth(250);
 
-        threatTable.getColumns().setAll(idCol, vendorCol, productCol, typeCol, sevCol, descCol);
+        // --- NEW 7TH COLUMN FOR PUBLISHED DATE ---
+        TableColumn<ThreatAdvisory, String> dateCol = new TableColumn<>("Published Date");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("publishedDate"));
+        dateCol.setPrefWidth(120);
+
+        // Include dateCol in your setAll list, and remove constrained resize so columns keep fixed intentional sizes
+        threatTable.getColumns().setAll(dateCol, idCol, vendorCol, productCol, typeCol, sevCol, descCol);
+        threatTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         
         queryInput = new TextField();
         queryInput.setPromptText("Enter your Query Here. Let AI do the heavy lifting!");
@@ -95,6 +103,12 @@ public class OrionGUI extends Application implements SecurityObserver {
         displayWebView = new WebView();
         webEngine = displayWebView.getEngine();
         renderWebView(); // Initialize empty canvas
+
+        // Wrap table and WebView in a vertical SplitPane for draggable resizing
+        SplitPane splitPane = new SplitPane();
+        splitPane.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        splitPane.getItems().addAll(threatTable, displayWebView);
+        splitPane.setDividerPositions(0.5); // Initial 50/50 split
 
         // --- ROW 1: Advisory-Specific AI & Sync Features ---
         Button syncBtn = new Button("Sync CISA KEV Feeds (F01)");
@@ -212,10 +226,9 @@ public class OrionGUI extends Application implements SecurityObserver {
         HBox row1 = new HBox(10, syncBtn, syncNistBtn, summaryBtn, mitigateBtn, triageBtn, gapBtn);
         HBox row2 = new HBox(10, correlateBtn, extractBtn, exportBtn, filterBtn, resetFilterBtn);
         
-        VBox root = new VBox(10, row1, row2, threatTable, displayWebView, queryInput);
+        VBox root = new VBox(10, row1, row2, splitPane, queryInput);
 
-        VBox.setVgrow(threatTable, Priority.ALWAYS);
-        VBox.setVgrow(displayWebView, Priority.ALWAYS);
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
 
         Scene scene = new Scene(root, 1100, 750);
 
@@ -299,6 +312,9 @@ public class OrionGUI extends Application implements SecurityObserver {
     /**
      * Converts markdown headers, bold text, and bullet points into clean HTML tags.
      */
+    /**
+     * Converts markdown headers, bold, italics, bullets, and blockquotes into clean HTML tags.
+     */
     private String convertMarkdownToHtml(String markdown) {
         if (markdown == null) return "";
         
@@ -309,11 +325,18 @@ public class OrionGUI extends Application implements SecurityObserver {
         html = html.replaceAll("(?m)^##\\s+(.*)$", "<h3 style='color: #222; margin: 10px 0 4px 0;'>$1</h3>");
         html = html.replaceAll("(?m)^#\\s+(.*)$", "<h2 style='color: #111; margin: 12px 0 6px 0;'>$1</h2>");
         
-        // Convert bold (**text** -> <b>)
+        // Convert bold (**text** -> <b>) - MUST be done before italics
         html = html.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>");
         
-        // Convert list bullets (- item -> <li>)
+        // Convert italics (*text* -> <i>)
+        html = html.replaceAll("\\*(.*?)\\*", "<i>$1</i>");
+        
+        // Convert list bullets starting with '-' or '*' -> <li>
         html = html.replaceAll("(?m)^-\\s+(.*)$", "<li style='margin-left: 15px;'>$1</li>");
+        html = html.replaceAll("(?m)^\\*\\s+(.*)$", "<li style='margin-left: 15px;'>$1</li>");
+        
+        // Convert blockquotes (> text -> <blockquote>)
+        html = html.replaceAll("(?m)^>\\s+(.*)$", "<blockquote style='border-left: 3px solid #007acc; margin: 5px 0; padding-left: 10px; color: #555;'>$1</blockquote>");
         
         // Convert newlines to breaks
         html = html.replace("\n", "<br>");

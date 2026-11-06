@@ -15,11 +15,13 @@ public class NistNvdParser implements AdvisoryParser {
         this.objectMapper = new ObjectMapper();
     }
 
-    @Override
     public List<ThreatAdvisory> parse(String rawData) throws Exception {
         List<ThreatAdvisory> advisories = new ArrayList<>();
         JsonNode root = objectMapper.readTree(rawData);
         JsonNode vulnerabilities = root.path("vulnerabilities");
+
+        // Grab the global API timestamp from the root JSON as a safety fallback
+        String apiTimestamp = root.path("timestamp").asText("N/A").split("T")[0];
 
         if (vulnerabilities.isArray()) {
             for (JsonNode vulnNode : vulnerabilities) {
@@ -33,8 +35,19 @@ public class NistNvdParser implements AdvisoryParser {
                 String vendor = "NIST NVD";
                 String product = "Standard CVE";
                 String threatType = "Vulnerability";
+                
+                // --- ROBUST DATE EXTRACTION ---
+                String publishedDate = apiTimestamp; // Fallback to the API generation time
+                
+                if (cve.hasNonNull("published")) {
+                    // NVD API 2.0 uses "published"
+                    publishedDate = cve.get("published").asText().split("T")[0]; 
+                } else if (vulnNode.hasNonNull("publishedDate")) {
+                    // Legacy NVD JSON feeds use "publishedDate"
+                    publishedDate = vulnNode.get("publishedDate").asText().split("T")[0];
+                }
 
-                advisories.add(new ThreatAdvisory(id, title, severity, vendor, product, threatType, description));
+                advisories.add(new ThreatAdvisory(id, title, severity, vendor, product, threatType, description, publishedDate));
             }
         }
         return advisories;

@@ -55,7 +55,8 @@ public class DatabaseManager {
                 + "vendor TEXT, "
                 + "product TEXT, "
                 + "threat_type TEXT, "
-                + "description TEXT"
+                + "description TEXT, "
+                + "published_date TEXT"
                 + ");";
 
         try (Statement stmt = connection.createStatement()) {

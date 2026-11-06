@@ -31,6 +31,7 @@ public class CisaKevParser implements AdvisoryParser {
                 String ransomware = vuln.path("knownRansomwareCampaignUse").asText("Unknown");
                 String notes = vuln.path("notes").asText("").toLowerCase();
                 String descRaw = vuln.path("shortDescription").asText();
+                String publishedDate = vuln.path("dateAdded").asText("N/A");
 
                 String threatType;
                 if (notes.contains("zero-day") || descRaw.toLowerCase().contains("zero-day")) {
@@ -45,7 +46,8 @@ public class CisaKevParser implements AdvisoryParser {
                 String description = descRaw + " | Action: " + vuln.path("requiredAction").asText();
 
                 // FIX: Now using the new 7-argument constructor
-                advisories.add(new ThreatAdvisory(id, title, severity, vendor, product, threatType, description));
+                advisories.add(new ThreatAdvisory(id, title, severity, vendor, product, threatType, description, publishedDate)
+                );
             }
         }
         return advisories;

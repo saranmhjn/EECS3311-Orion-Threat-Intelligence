@@ -16,6 +16,7 @@ public class ThreatAdvisory {
     private String product;
     private String threatType; 
     private String description;
+    private String publishedDate;
 
     /*@ 
       @ public invariant id != null ==> id.length() > 0;
@@ -43,8 +44,9 @@ public class ThreatAdvisory {
       @ ensures this.product == product;
       @ ensures this.threatType == threatType;
       @ ensures this.description == description;
+      @ ensures this.publishedDate == publishedDate;
       @*/
-    public ThreatAdvisory(String id, String title, String severity, String vendor, String product, String threatType, String description) {
+    public ThreatAdvisory(String id, String title, String severity, String vendor, String product, String threatType, String description, String publishedDate) {
         this.id = id;
         this.title = title;
         this.severity = severity;
@@ -52,6 +54,7 @@ public class ThreatAdvisory {
         this.product = product;
         this.threatType = threatType;
         this.description = description;
+        this.publishedDate = publishedDate;
     }
 
     /*@ pure @*/
@@ -68,6 +71,9 @@ public class ThreatAdvisory {
     public String getThreatType() { return threatType; }
     /*@ pure @*/
     public String getDescription() { return description; }
+    public String getPublishedDate() {
+    return publishedDate != null ? publishedDate : "N/A";
+}
 
     /*@
       @ requires id != null && id.length() > 0;
@@ -86,4 +92,7 @@ public class ThreatAdvisory {
     public void setThreatType(String threatType) { this.threatType = threatType; }
     /*@ ensures this.description == description; @*/
     public void setDescription(String description) { this.description = description; }
+    public void setPublishedDate(String publishedDate) {
+    this.publishedDate = publishedDate;
+}
 }
