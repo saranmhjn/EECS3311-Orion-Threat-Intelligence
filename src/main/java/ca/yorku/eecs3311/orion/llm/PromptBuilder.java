@@ -1,147 +1,79 @@
 package ca.yorku.eecs3311.orion.llm;
 
 import java.util.List;
-
 import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 
 /**
- * Constructs formatted and constrained prompts for the Large Language Model.
- * Ensures AI outputs are strictly formatted and grounded in retrieved context.
+ * Constructs highly constrained, bulletproof prompts for the Orion AI.
+ * Enforces strict structural formatting and bans tables and paragraphs.
  */
 public class PromptBuilder {
 
-    /**
-     * Required default constructor.
-     */
-    /*@ ensures true; @*/
     public PromptBuilder() {}
 
-    /**
-     * Builds a prompt for general threat landscape querying.
-     * 
-     * @param query The user's natural language question.
-     * @param context The conversational or retrieved database context.
-     * @return A formatted prompt string.
-     */
-    /*@
-      @ requires query != null && context != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
-   /**
-     * Builds a prompt for general threat landscape querying.
-     * 
-     * @param query The user's natural language question.
-     * @param context The conversational or retrieved database context.
-     * @return A formatted prompt string.
-     */
-    /*@
-      @ requires query != null && context != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
     public String buildQueryPrompt(String query, String context) {
-        return "You are Orion, an autonomous Cyber Threat Intelligence AI assistant. " +
-               "Respond conversationally, accurately, and concisely.\n\n" +
-               "Context History:\n" + context + 
-               "\n\nUser Query: " + query + 
-               "\n\nIf the user is greeting you or asking about your capabilities, answer naturally. " +
-               "If the user is asking a cybersecurity question (like 'what is a zero-day'), explain it clearly without over-analyzing the user's intent.";
+        return "You are Orion, a Cyber Threat Intelligence Assistant.\n" +
+               "Current Query: " + query + "\n" +
+               "Context: " + context + "\n\n" +
+               "CRITICAL RULES:\n" +
+               "1. Start with the header: ### General Inquiry\n" +
+               "2. Answer in 2-3 direct, short bullet points.\n" +
+               "3. NO markdown tables. NO long paragraphs. NO conversational filler.";
     }
 
-    /**
-     * Builds a prompt to evaluate the triage priority of a specific vulnerability.
-     */
-    /*@
-      @ requires advisory != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
-    public String buildTriagePrompt(ThreatAdvisory advisory) {
-        return "Evaluate priority score for CVE: " + advisory.getId() + 
-               "\nBased on vulnerability description: " + advisory.getDescription();
-    }
-    
-    /**
-     * Builds a prompt to generate a defensive mitigation playbook.
-     * Maps to Feature F05[cite: 8, 34].
-     * 
-     * @param advisory The threat advisory requiring mitigation.
-     * @param env The enterprise infrastructure profile.
-     * @return A constrained prompt string.
-     */
-    /*@ 
-      @ requires advisory != null && env != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
-    public String buildMitigationPrompt(ThreatAdvisory advisory, String environment) {
-        return "You are Orion, an autonomous Cyber Threat Intelligence AI assistant. " +
-               "Generate a structured technical mitigation playbook for vulnerability " + advisory.getId() + 
-               " tailored for environment: " + environment + ".\n\n" +
-               "Formatting Rules:\n" +
-               "1. Do NOT use markdown tables (pipes like '|'), as they do not render correctly in desktop text views.\n" +
-               "2. Use clean bold headings, numbered lists, and bullet points.\n" +
-               "3. Keep sections concise, actionable, and formatted for a high-density security console. \n" +
-               "4.The audience is security researchers, keep it relavant";
-    }
-
-    /**
-     * Builds a prompt for automated threat bulletin summarization.
-     * Maps to Feature F02.
-     * 
-     * @param advisory The threat advisory to summarize.
-     * @return A constrained prompt string.
-     */
-    /*@ 
-      @ requires advisory != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
     public String buildSummaryPrompt(ThreatAdvisory advisory) {
-        return "Analyze the following technical vulnerability advisory and provide a concise " +
-               "executive summary detailing the attack vector, affected systems, and operational severity:\n\n" +
-               "Formatting Rules:\n" +
-               "1. Do NOT use markdown tables (pipes like '|'), as they do not render correctly in desktop text views.\n" +
-               "2. Use clean bold headings, numbered lists, and bullet points.\n" +
-               "3. Keep sections concise, actionable, and formatted for a high-density security console. \n" +
-               "4.The audience is security researchers, keep it relavant";
+        return "Summarize CVE: " + advisory.getId() + " - " + advisory.getTitle() + "\n" +
+               "Description: " + advisory.getDescription() + "\n\n" +
+               "CRITICAL RULES:\n" +
+               "1. Start with the header: ### Executive Summary for " + advisory.getId() + "\n" +
+               "2. NO markdown tables. NO long paragraphs.\n" +
+               "3. Use exactly this structure with single-sentence bullet points:\n\n" +
+               "**Attack Vector**\n- [Point]\n\n" +
+               "**Operational Impact**\n- [Point]\n\n" +
+               "**Affected Systems**\n- [Point]";
     }
 
-    /**
-     * Builds a prompt for dynamic vulnerability triage and priority scoring.
-     * Maps to Feature F09.
-     * 
-     * @param advisory The threat advisory to evaluate.
-     * @param techStack The enterprise infrastructure profile (e.g., "Windows Server, AWS Cloud").
-     * @return A constrained prompt string.
-     */
-    /*@ 
-      @ requires advisory != null && techStack != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
+    public String buildMitigationPrompt(ThreatAdvisory advisory, String environment) {
+        return "Generate a Mitigation Playbook for " + advisory.getId() + " in: " + environment + ".\n" +
+               "Description: " + advisory.getDescription() + "\n\n" +
+               "CRITICAL RULES:\n" +
+               "1. Start with the header: ### Mitigation Playbook for " + advisory.getId() + "\n" +
+               "2. NO markdown tables. NO paragraphs.\n" +
+               "3. Use exactly this structure with precise, single-sentence bullet points:\n\n" +
+               "**Patching Strategy**\n- [Point]\n\n" +
+               "**Temporary Workarounds**\n- [Point]\n\n" +
+               "**Threat Hunting / Monitoring**\n- [Point]";
+    }
+
     public String buildAdvancedTriagePrompt(ThreatAdvisory advisory, String techStack) {
-        return "Perform a dynamic vulnerability triage and assign a customized priority score " +
-               "(CRITICAL, HIGH, MEDIUM, LOW) based on the following advisory and target infrastructure:\n\n" +
-               "CVE ID: " + advisory.getId() + "\n" +
-               "Base Severity: " + advisory.getSeverity() + "\n" +
-               "Description: " + advisory.getDescription() + "\n\n" +
-               "Target Enterprise Tech Stack: " + techStack + "\n" +
-               "Provide the calibrated priority score and a brief tactical justification.";
+        return "Calibrate priority for CVE: " + advisory.getId() + " against stack: " + techStack + ".\n" +
+               "Severity: " + advisory.getSeverity() + " | Description: " + advisory.getDescription() + "\n\n" +
+               "CRITICAL RULES:\n" +
+               "1. Start with the header: ### Dynamic Triage for " + advisory.getId() + "\n" +
+               "2. NO markdown tables. NO paragraphs.\n" +
+               "3. Use exactly this structure with single-sentence bullet points:\n\n" +
+               "**Tactical Priority**\n- [Score: CRITICAL/HIGH/MEDIUM/LOW]\n\n" +
+               "**Applicability**\n- [Point]\n\n" +
+               "**SLA Recommendation**\n- [Point]";
     }
 
-    /**
-     * Builds a prompt for evaluating enterprise security control gaps against a threat.
-     * Maps to Feature F10[cite: 9, 10].
-     * 
-     * @param advisory The target threat advisory.
-     * @param controls List of active enterprise security controls.
-     * @return A constrained prompt string.
-     */
-    /*@ 
-      @ requires advisory != null && controls != null;
-      @ ensures \result != null && \result.length() > 0;
-      @*/
     public String buildGapAnalysisPrompt(ThreatAdvisory advisory, List<String> controls) {
-        return "Perform a Security Control Gap Analysis for vulnerability " + advisory.getId() + 
-               " (" + advisory.getTitle() + ")\n" +
-               "Description: " + advisory.getDescription() + "\n\n" +
-               "Active Enterprise Security Controls: " + String.join(", ", controls) + "\n\n" +
-               "Identify unmitigated attack vectors and provide a structured gap matrix with recommendations.";
+        return "Security Control Gap Analysis for " + advisory.getId() + " against controls: " + String.join(", ", controls) + ".\n" +
+               "Advisory: " + advisory.getDescription() + "\n\n" +
+               "CRITICAL RULES:\n" +
+               "1. Start with the header: ### Gap Analysis for " + advisory.getId() + "\n" +
+               "2. Absolutely NO markdown tables (do not use '|'). NO long paragraphs.\n" +
+               "3. Use exactly this structure with short, punchy bullet points:\n\n" +
+               "**Active Coverage**\n- [Point]\n\n" +
+               "**Blind Spots**\n- [Point]\n\n" +
+               "**Remediation Gaps**\n- [Point]\n\n" +
+               "**Immediate Recommendation**\n- [Point]";
+    }
+
+    public String buildTriagePrompt(ThreatAdvisory advisory) {
+        return "Priority triage evaluation for CVE ID: " + advisory.getId() + ".\n" +
+               "Payload: " + advisory.getDescription() + "\n\n" +
+               "Start with header: ### Triage Evaluation for " + advisory.getId() + "\n" +
+               "Provide 3 short bullet points. NO tables.";
     }
 }
