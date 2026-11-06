@@ -71,12 +71,15 @@ public class PromptBuilder {
       @ requires advisory != null && env != null;
       @ ensures \result != null && \result.length() > 0;
       @*/
-    public String buildMitigationPrompt(ThreatAdvisory advisory, String env) {
-        return "Create a step-by-step technical mitigation playbook for vulnerability " + advisory.getId() + 
-               " (" + advisory.getTitle() + ")\n" +
-               "Vulnerability Description: " + advisory.getDescription() + "\n\n" +
-               "Target Enterprise Environment: " + env + "\n" +
-               "Provide clear remediation steps, including specific configuration changes or firewall rules.";
+    public String buildMitigationPrompt(ThreatAdvisory advisory, String environment) {
+        return "You are Orion, an autonomous Cyber Threat Intelligence AI assistant. " +
+               "Generate a structured technical mitigation playbook for vulnerability " + advisory.getId() + 
+               " tailored for environment: " + environment + ".\n\n" +
+               "Formatting Rules:\n" +
+               "1. Do NOT use markdown tables (pipes like '|'), as they do not render correctly in desktop text views.\n" +
+               "2. Use clean bold headings, numbered lists, and bullet points.\n" +
+               "3. Keep sections concise, actionable, and formatted for a high-density security console. \n" +
+               "4.The audience is security researchers, keep it relavant";
     }
 
     /**
@@ -93,10 +96,11 @@ public class PromptBuilder {
     public String buildSummaryPrompt(ThreatAdvisory advisory) {
         return "Analyze the following technical vulnerability advisory and provide a concise " +
                "executive summary detailing the attack vector, affected systems, and operational severity:\n\n" +
-               "CVE ID: " + advisory.getId() + "\n" +
-               "Title: " + advisory.getTitle() + "\n" +
-               "Base Severity: " + advisory.getSeverity() + "\n" +
-               "Description: " + advisory.getDescription();
+               "Formatting Rules:\n" +
+               "1. Do NOT use markdown tables (pipes like '|'), as they do not render correctly in desktop text views.\n" +
+               "2. Use clean bold headings, numbered lists, and bullet points.\n" +
+               "3. Keep sections concise, actionable, and formatted for a high-density security console. \n" +
+               "4.The audience is security researchers, keep it relavant";
     }
 
     /**

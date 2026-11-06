@@ -37,11 +37,17 @@
         <version>5.10.2</version>
     </dependency>
     <dependency>
-    <groupId>io.github.cdimascio</groupId>
-    <artifactId>dotenv-java</artifactId>
-    <version>3.0.0</version>
-</dependency>
-  </dependencies>
+        <groupId>io.github.cdimascio</groupId>
+        <artifactId>dotenv-java</artifactId>
+        <version>3.0.0</version>
+    </dependency>
+    <!-- JavaFX Web (For WebView rendering) -->
+    <dependency>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-web</artifactId>
+        <version>21.0.2</version>
+    </dependency>
+</dependencies>
   <build>
         <plugins>
             <plugin>

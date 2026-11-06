@@ -9,7 +9,6 @@ import ca.yorku.eecs3311.orion.observer.SecurityObserver;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableView;
@@ -20,7 +19,9 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.web.WebView;
 
 import java.util.List;
 
@@ -33,7 +34,9 @@ public class OrionGUI extends Application implements SecurityObserver {
     private AgentController controller;
     private TableView<ThreatAdvisory> threatTable;
     private TextField queryInput;
-    private TextArea displayArea;
+    private WebView displayWebView;
+    private javafx.scene.web.WebEngine webEngine;
+    private StringBuilder chatHistoryHtml = new StringBuilder();
 
     /*@ public invariant controller != null; @*/
 
@@ -55,6 +58,7 @@ public class OrionGUI extends Application implements SecurityObserver {
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Orion Threat Intelligence");
+        primaryStage.setResizable(true);
 
         threatTable = new TableView<>();
         threatTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -86,21 +90,22 @@ public class OrionGUI extends Application implements SecurityObserver {
         threatTable.getColumns().setAll(idCol, vendorCol, productCol, typeCol, sevCol, descCol);
         
         queryInput = new TextField();
-        queryInput.setPromptText("Ask the AI about the threat landscape (e.g., 'What are zero-day threats?')...");
+        queryInput.setPromptText("Enter your Query Here. Let AI do the heavy lifting!");
         
-        displayArea = new TextArea();
-        displayArea.setEditable(false);
+        displayWebView = new WebView();
+        webEngine = displayWebView.getEngine();
+        renderWebView(); // Initialize empty canvas
 
         // --- ROW 1: Advisory-Specific AI & Sync Features ---
         Button syncBtn = new Button("Sync CISA KEV Feeds (F01)");
         syncBtn.setOnAction(e -> {
-            displayArea.appendText("[System] Initiating CISA KEV sync...\n");
+            appendSystemLog("Initiating CISA KEV sync...");
             new Thread(() -> controller.syncFeeds("CISA")).start(); 
         });
 
         Button syncNistBtn = new Button("Sync NIST Feed (F01)");
         syncNistBtn.setOnAction(e -> {
-            displayArea.appendText("[System] Initiating NIST NVD sync...\n");
+            appendSystemLog("Initiating NIST NVD sync...");
             new Thread(() -> controller.syncFeeds("NIST")).start(); 
         });
 
@@ -108,7 +113,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         summaryBtn.setOnAction(e -> {
             ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                displayArea.appendText("[System] Generating AI summary for " + selected.getId() + "...\n");
+                appendSystemLog("Generating AI summary for " + selected.getId() + "...");
                 new Thread(() -> displaySummary(controller.summarizeAdvisory(selected.getId()))).start();
             } else {
                 showError("Please select an advisory from the table first.");
@@ -119,7 +124,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         mitigateBtn.setOnAction(e -> {
             ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                displayArea.appendText("[System] Generating AI mitigation playbook...\n");
+                appendSystemLog("Generating AI mitigation playbook...");
                 new Thread(() -> displaySummary(controller.generateMitigationPlaybook(selected.getId(), "Standard Enterprise Environment"))).start();
             } else {
                 showError("Please select an advisory from the table first.");
@@ -130,7 +135,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         triageBtn.setOnAction(e -> {
             ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                displayArea.appendText("[System] Evaluating dynamic triage...\n");
+                appendSystemLog("Evaluating dynamic triage...");
                 new Thread(() -> displaySummary(controller.evaluateAdvisoryTriage(selected.getId(), "Windows Server, AWS Cloud"))).start();
             } else {
                 showError("Please select an advisory from the table first.");
@@ -141,7 +146,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         gapBtn.setOnAction(e -> {
             ThreatAdvisory selected = threatTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                displayArea.appendText("[System] Evaluating security gaps...\n");
+                appendSystemLog("Evaluating security gaps...");
                 new Thread(() -> displaySummary(controller.evaluateSecurityGaps(selected.getId(), java.util.List.of("Firewall", "EDR")))).start();
             } else {
                 showError("Please select an advisory from the table first.");
@@ -151,10 +156,10 @@ public class OrionGUI extends Application implements SecurityObserver {
         // --- ROW 2: Utility & System Features ---
         Button correlateBtn = new Button("Correlate Logs (F04)");
         correlateBtn.setOnAction(e -> {
-            displayArea.appendText("[System] Correlating internal logs...\n");
+            appendSystemLog("Correlating internal logs...");
             new Thread(() -> {
                 java.util.List<String> anomalies = controller.correlateLogs("");
-                Platform.runLater(() -> displayArea.appendText("Anomalies Found:\n" + String.join("\n", anomalies) + "\n\n"));
+                Platform.runLater(() -> appendSystemLog("Anomalies Found:\n" + String.join("\n", anomalies)));
             }).start();
         });
 
@@ -165,10 +170,10 @@ public class OrionGUI extends Application implements SecurityObserver {
                 showError("Please paste text containing IPs or Hashes into the query box first.");
                 return;
             }
-            displayArea.appendText("[System] Extracting IoCs from text...\n");
+            appendSystemLog("Extracting IoCs from text...");
             new Thread(() -> {
                 java.util.List<String> iocs = controller.extractIocsFromText(text);
-                Platform.runLater(() -> displayArea.appendText("Extracted IoCs:\n" + String.join("\n", iocs) + "\n\n"));
+                Platform.runLater(() -> appendSystemLog("Extracted IoCs:\n" + String.join("\n", iocs)));
             }).start();
         });
 
@@ -180,43 +185,49 @@ public class OrionGUI extends Application implements SecurityObserver {
                 return;
             }
 
-            displayArea.appendText("[System] Exporting report to report.md...\n");
+            appendSystemLog("Exporting report to report.md...");
             new Thread(() -> {
                 boolean success = controller.exportThreatBriefing(new java.util.ArrayList<>(selected), "report.md");
-                Platform.runLater(() -> displayArea.appendText(success ? "[System] Export complete.\n" : "[System] Export failed.\n"));
+                Platform.runLater(() -> appendSystemLog(success ? "Export complete." : "Export failed."));
             }).start();
         });
 
         Button filterBtn = new Button("Filter Critical (F08)");
         filterBtn.setOnAction(e -> {
-            displayArea.appendText("[System] Applying historical filter: CRITICAL...\n");
+            appendSystemLog("Applying historical filter: CRITICAL...");
             AdvisoryFilter filter = new AdvisoryFilter();
             filter.setSeverityThreshold("CRITICAL");
             List<ThreatAdvisory> filtered = controller.searchAdvisories(filter);
             displayThreats(filtered);
-            displayArea.appendText("[System] Showing " + filtered.size() + " filtered records.\n");
+            appendSystemLog("Showing " + filtered.size() + " filtered records.");
         });
 
         Button resetFilterBtn = new Button("Reset Filter");
         resetFilterBtn.setOnAction(e -> {
             displayThreats(controller.getStoredAdvisories());
-            displayArea.appendText("[System] Filters reset to all records.\n");
+            appendSystemLog("Filters reset to all records.");
         });
 
-        // Layout the buttons horizontally (Now includes syncNistBtn)
+        // Layout the buttons horizontally
         HBox row1 = new HBox(10, syncBtn, syncNistBtn, summaryBtn, mitigateBtn, triageBtn, gapBtn);
         HBox row2 = new HBox(10, correlateBtn, extractBtn, exportBtn, filterBtn, resetFilterBtn);
         
-        VBox root = new VBox(10, row1, row2, threatTable, displayArea, queryInput);
-        Scene scene = new Scene(root, 900, 650);
+        VBox root = new VBox(10, row1, row2, threatTable, displayWebView, queryInput);
+
+        VBox.setVgrow(threatTable, Priority.ALWAYS);
+        VBox.setVgrow(displayWebView, Priority.ALWAYS);
+
+        Scene scene = new Scene(root, 1100, 750);
 
         queryInput.setOnAction(e -> {
             String query = queryInput.getText();
-            displayArea.appendText("You: " + query + "\n");
+            chatHistoryHtml.append("<div style='color: #333; margin: 6px 0;'><b>You:</b> ").append(escapeHtml(query)).append("</div>");
             queryInput.clear();
             
-            String response = controller.handleNaturalQuery(query);
-            displaySummary(response);
+            new Thread(() -> {
+                String response = controller.handleNaturalQuery(query);
+                displaySummary(response);
+            }).start();
         });
 
         List<ThreatAdvisory> initialThreats = controller.getStoredAdvisories();
@@ -237,17 +248,80 @@ public class OrionGUI extends Application implements SecurityObserver {
         });
     }
 
-    
-
-    /*@ requires summary != null; @*/
-    public void displaySummary(String summary) {
-        // Platform.runLater ensures UI updates happen safely on the JavaFX Application Thread
-        Platform.runLater(() -> displayArea.appendText("Orion AI: " + summary + "\n\n"));
+    /**
+     * Appends a system status log into the HTML console stream.
+     */
+    public void appendSystemLog(String message) {
+        Platform.runLater(() -> {
+            chatHistoryHtml.append("<div style='color: #555; font-family: monospace; font-size: 11px; margin-bottom: 4px;'>[System] ")
+                           .append(escapeHtml(message)).append("</div>");
+            renderWebView();
+        });
     }
 
+    /**
+     * Renders AI responses with automatic markdown-to-HTML conversion into the WebView.
+     */
+    /*@ requires summary != null; @*/
+    public void displaySummary(String markdownSummary) {
+        Platform.runLater(() -> {
+            String convertedHtml = convertMarkdownToHtml(markdownSummary);
+            chatHistoryHtml.append("<div style='background: #ffffff; border-left: 4px solid #007acc; padding: 12px; margin: 8px 0; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);'>" +
+                                   "<b style='color: #007acc;'>Orion AI:</b><br><br>")
+                           .append(convertedHtml)
+                           .append("</div>");
+            renderWebView();
+        });
+    }
+
+    /**
+     * Displays error messages prominently in red inside the console.
+     */
     /*@ requires message != null; @*/
     public void showError(String message) {
-        Platform.runLater(() -> displayArea.appendText("ERROR: " + message + "\n"));
+        Platform.runLater(() -> {
+            chatHistoryHtml.append("<div style='color: #d9534f; background: #fdf7f7; border-left: 4px solid #d9534f; padding: 8px; margin: 6px 0; font-family: monospace;'><b>ERROR:</b> ")
+                           .append(escapeHtml(message)).append("</div>");
+            renderWebView();
+        });
+    }
+
+    /**
+     * Refreshes the WebView content.
+     */
+    private void renderWebView() {
+        String fullHtml = "<html><body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; font-size: 13px; background-color: #f4f4f4; padding: 10px;'>" +
+                chatHistoryHtml.toString() +
+                "</body></html>";
+        webEngine.loadContent(fullHtml);
+    }
+
+    /**
+     * Converts markdown headers, bold text, and bullet points into clean HTML tags.
+     */
+    private String convertMarkdownToHtml(String markdown) {
+        if (markdown == null) return "";
+        
+        String html = escapeHtml(markdown);
+        
+        // Convert headers
+        html = html.replaceAll("(?m)^###\\s+(.*)$", "<h4 style='color: #333; margin: 8px 0 4px 0;'>$1</h4>");
+        html = html.replaceAll("(?m)^##\\s+(.*)$", "<h3 style='color: #222; margin: 10px 0 4px 0;'>$1</h3>");
+        html = html.replaceAll("(?m)^#\\s+(.*)$", "<h2 style='color: #111; margin: 12px 0 6px 0;'>$1</h2>");
+        
+        // Convert bold (**text** -> <b>)
+        html = html.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>");
+        
+        // Convert list bullets (- item -> <li>)
+        html = html.replaceAll("(?m)^-\\s+(.*)$", "<li style='margin-left: 15px;'>$1</li>");
+        
+        // Convert newlines to breaks
+        html = html.replace("\n", "<br>");
+        return html;
+    }
+
+    private String escapeHtml(String str) {
+        return str.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     public void updateProgress(double progress) {
@@ -258,16 +332,13 @@ public class OrionGUI extends Application implements SecurityObserver {
      * Fulfills the SecurityObserver contract. 
      * Handles background events triggered by the AgentController.
      */
-  @Override
+    @Override
     public void onSecurityEvent(String eventType, Object data) {
         Platform.runLater(() -> {
             if ("SYNC_COMPLETE".equals(eventType)) {
-                displayArea.appendText("[System] Sync completed successfully. " + data + " records processed.\n");
-                
-                // Refresh table with all stored advisories from database
+                appendSystemLog("Sync completed successfully. " + data + " records processed.");
                 List<ThreatAdvisory> updatedThreats = controller.getStoredAdvisories();
                 displayThreats(updatedThreats);
-                
             } else if ("SYNC_ERROR".equals(eventType)) {
                 showError(data.toString());
             }
