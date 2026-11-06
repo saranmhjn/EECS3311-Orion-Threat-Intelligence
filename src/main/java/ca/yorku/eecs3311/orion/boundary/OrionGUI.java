@@ -59,7 +59,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         threatTable = new TableView<>();
         threatTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
-       TableColumn<ThreatAdvisory, String> idCol = new TableColumn<>("CVE ID");
+        TableColumn<ThreatAdvisory, String> idCol = new TableColumn<>("CVE ID");
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
         idCol.setPrefWidth(120);
 
@@ -91,11 +91,17 @@ public class OrionGUI extends Application implements SecurityObserver {
         displayArea = new TextArea();
         displayArea.setEditable(false);
 
-// --- ROW 1: Advisory-Specific AI Features ---
+        // --- ROW 1: Advisory-Specific AI & Sync Features ---
         Button syncBtn = new Button("Sync CISA KEV Feeds (F01)");
         syncBtn.setOnAction(e -> {
             displayArea.appendText("[System] Initiating CISA KEV sync...\n");
             new Thread(() -> controller.syncFeeds("CISA")).start(); 
+        });
+
+        Button syncNistBtn = new Button("Sync NIST Feed (F01)");
+        syncNistBtn.setOnAction(e -> {
+            displayArea.appendText("[System] Initiating NIST NVD sync...\n");
+            new Thread(() -> controller.syncFeeds("NIST")).start(); 
         });
 
         Button summaryBtn = new Button("Summarize Selected (F02)");
@@ -147,7 +153,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         correlateBtn.setOnAction(e -> {
             displayArea.appendText("[System] Correlating internal logs...\n");
             new Thread(() -> {
-                java.util.List<String> anomalies = controller.correlateLogs(""); // Uses your fallback simulation
+                java.util.List<String> anomalies = controller.correlateLogs("");
                 Platform.runLater(() -> displayArea.appendText("Anomalies Found:\n" + String.join("\n", anomalies) + "\n\n"));
             }).start();
         });
@@ -168,9 +174,7 @@ public class OrionGUI extends Application implements SecurityObserver {
 
         Button exportBtn = new Button("Export Briefing (F07)");
         exportBtn.setOnAction(e -> {
-            // Grab all selected rows
             java.util.List<ThreatAdvisory> selected = threatTable.getSelectionModel().getSelectedItems();
-
             if (selected.isEmpty()) {
                 showError("Please select at least one advisory from the table to export.");
                 return;
@@ -178,17 +182,16 @@ public class OrionGUI extends Application implements SecurityObserver {
 
             displayArea.appendText("[System] Exporting report to report.md...\n");
             new Thread(() -> {
-                // Export only the selected items
                 boolean success = controller.exportThreatBriefing(new java.util.ArrayList<>(selected), "report.md");
                 Platform.runLater(() -> displayArea.appendText(success ? "[System] Export complete.\n" : "[System] Export failed.\n"));
             }).start();
-            
-     });
-     Button filterBtn = new Button("Filter Critical (F08)");
+        });
+
+        Button filterBtn = new Button("Filter Critical (F08)");
         filterBtn.setOnAction(e -> {
-            displayArea.appendText("[System] Applying historical filter: CRITICAL (KEV)...\n");
+            displayArea.appendText("[System] Applying historical filter: CRITICAL...\n");
             AdvisoryFilter filter = new AdvisoryFilter();
-            filter.setSeverityThreshold("CRITICAL (KEV)");
+            filter.setSeverityThreshold("CRITICAL");
             List<ThreatAdvisory> filtered = controller.searchAdvisories(filter);
             displayThreats(filtered);
             displayArea.appendText("[System] Showing " + filtered.size() + " filtered records.\n");
@@ -199,30 +202,23 @@ public class OrionGUI extends Application implements SecurityObserver {
             displayThreats(controller.getStoredAdvisories());
             displayArea.appendText("[System] Filters reset to all records.\n");
         });
-        
 
-        // Layout the buttons horizontally
-        HBox row1 = new HBox(10, syncBtn, summaryBtn, mitigateBtn, triageBtn, gapBtn);
+        // Layout the buttons horizontally (Now includes syncNistBtn)
+        HBox row1 = new HBox(10, syncBtn, syncNistBtn, summaryBtn, mitigateBtn, triageBtn, gapBtn);
         HBox row2 = new HBox(10, correlateBtn, extractBtn, exportBtn, filterBtn, resetFilterBtn);
         
-        // Replace your old VBox root instantiation with this one:
         VBox root = new VBox(10, row1, row2, threatTable, displayArea, queryInput);
+        Scene scene = new Scene(root, 900, 650);
 
-        Scene scene = new Scene(root, 800, 600);
-
-        // Event handler for Natural Language Querying (Feature F03)
         queryInput.setOnAction(e -> {
             String query = queryInput.getText();
             displayArea.appendText("You: " + query + "\n");
             queryInput.clear();
             
-            // Pass the query to the AgentController, which routes to the AI Facade
             String response = controller.handleNaturalQuery(query);
             displaySummary(response);
         });
 
-           
-       // Fetch existing advisories from database on startup via the Controller
         List<ThreatAdvisory> initialThreats = controller.getStoredAdvisories();
         displayThreats(initialThreats);
 

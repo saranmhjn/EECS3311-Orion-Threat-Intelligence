@@ -2,12 +2,12 @@ package ca.yorku.eecs3311.orion.controller;
 
 import ca.yorku.eecs3311.orion.api.AdvisoryParser;
 import ca.yorku.eecs3311.orion.api.AdvisoryParserFactory;
+import ca.yorku.eecs3311.orion.api.CisaKevApiClient;
 import ca.yorku.eecs3311.orion.api.NvdApiClient;
 import ca.yorku.eecs3311.orion.command.CommandManager;
 import ca.yorku.eecs3311.orion.command.SecurityCommand;
 import ca.yorku.eecs3311.orion.database.DatabaseManager;
 import ca.yorku.eecs3311.orion.llm.AgentFacade;
-import ca.yorku.eecs3311.orion.llm.GeminiLLMClient;
 import ca.yorku.eecs3311.orion.model.AdvisoryFilter;
 import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 import ca.yorku.eecs3311.orion.repository.AdvisoryRepository;
@@ -69,22 +69,34 @@ public class AgentController {
     }
 
     /*@ requires source != null && source.length() > 0; @*/
-    public void syncFeeds(String source) {
+   public void syncFeeds(String feedType) {
         try {
-            // Notify GUI that sync has started
-            notifyObservers("SYNC_STARTED", source);
-            
-            String rawData = apiClient.fetchRawAdvisories();
-            AdvisoryParser parser = parserFactory.createParser("CISA");
+            // 1. Fetch raw data from the appropriate API client
+            String rawData;
+            if ("NIST".equalsIgnoreCase(feedType)) {
+                NvdApiClient nvdClient = new NvdApiClient();
+                rawData = nvdClient.fetchRawAdvisories(); // <-- Updated method name
+            } else {
+                CisaKevApiClient cisaClient = new CisaKevApiClient();
+                rawData = cisaClient.fetchRawAdvisories(); // <-- Updated method name
+            }
+
+            // 2. Create the correct parser using the Factory Pattern
+            AdvisoryParserFactory factory = new AdvisoryParserFactory();
+            AdvisoryParser parser = factory.createParser(feedType);
+
+            // 3. Parse records
             List<ThreatAdvisory> advisories = parser.parse(rawData);
+
+            // 4. Save to SQLite repository
             advisoryRepo.saveAll(advisories);
-            
-            // Notify GUI that sync was completely successful, passing the count
+
+            // 5. Notify UI observers (Observer Pattern)
             notifyObservers("SYNC_COMPLETE", advisories.size());
-            
+
         } catch (Exception e) {
-            // Notify GUI of the error so it can show a popup, rather than crashing
-            notifyObservers("SYNC_ERROR", e.getMessage());
+            e.printStackTrace();
+            notifyObservers("SYNC_ERROR", "Sync failed: " + e.getMessage());
         }
     }
 

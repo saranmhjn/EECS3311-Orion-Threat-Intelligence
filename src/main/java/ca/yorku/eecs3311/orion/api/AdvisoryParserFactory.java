@@ -6,22 +6,12 @@ package ca.yorku.eecs3311.orion.api;
  */
 public class AdvisoryParserFactory {
     
-    /**
-     * Creates and returns a parser based on the requested data format.
-     * 
-     * @param format The data format (e.g., "JSON", "XML").
-     * @return An implementation of AdvisoryParser.
-     */
-    /*@
-      @ requires format != null;
-      @ ensures \result != null;
-      @*/
-    public AdvisoryParser createParser(String format) {
-        if ("CISA".equalsIgnoreCase(format)) {
+    public AdvisoryParser createParser(String feedType) {
+        if ("NIST".equalsIgnoreCase(feedType) || "JSON".equalsIgnoreCase(feedType)) {
+            return new NistNvdParser();
+        } else if ("CISA".equalsIgnoreCase(feedType)) {
             return new CisaKevParser();
-        } else if ("JSON".equalsIgnoreCase(format)) {
-            return new NvdJsonParser();
         }
-        return new CisaKevParser(); // Default to the upgraded CISA feed
+        return new CisaKevParser(); // Default fallback
     }
 }

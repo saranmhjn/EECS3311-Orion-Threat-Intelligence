@@ -6,17 +6,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 /**
- * Client responsible exclusively for executing HTTP network requests to the NVD API.
- * Delegates data parsing to the AdvisoryParser implementations.
+ * API client responsible for fetching raw JSON vulnerability feeds from the NIST NVD API v2.0.
  */
 public class NvdApiClient {
 
-    //CISA Known Exploited Vulnerabilities (KEV) feed URL
-    private static final String API_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
+    private static final String API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=500";
     private final HttpClient httpClient;
 
     /*@ public invariant httpClient != null; @*/
-    /*@ public invariant API_URL != null && API_URL.length() > 0; @*/
 
     /*@
       @ requires true;
@@ -27,7 +24,7 @@ public class NvdApiClient {
     }
 
     /**
-     * Fetches the raw JSON payload from the NVD API.
+     * Fetches the raw JSON payload from the NIST NVD API.
      * 
      * @return The raw JSON string returned by the API.
      * @throws Exception if the network request fails.
@@ -39,10 +36,15 @@ public class NvdApiClient {
     public String fetchRawAdvisories() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
+                .header("Accept", "application/json")
                 .GET()
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else {
+            throw new RuntimeException("Failed to fetch NIST feed: HTTP " + response.statusCode());
+        }
     }
 }
