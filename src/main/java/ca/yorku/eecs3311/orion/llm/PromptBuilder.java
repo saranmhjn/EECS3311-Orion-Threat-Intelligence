@@ -54,4 +54,23 @@ public class PromptBuilder {
         return "Create step-by-step mitigation plan for " + advisory.getId() + 
                " given enterprise infrastructure: " + env;
     }
+    /**
+     * Builds a prompt for automated threat bulletin summarization.
+     * Maps to Feature F02.
+     * 
+     * @param advisory The threat advisory to summarize.
+     * @return A constrained prompt string.
+     */
+    /*@ 
+      @ requires advisory != null;
+      @ ensures \result != null && \result.length() > 0;
+      @*/
+    public String buildSummaryPrompt(ThreatAdvisory advisory) {
+        return "Analyze the following technical vulnerability advisory and provide a concise " +
+               "executive summary detailing the attack vector, affected systems, and operational severity:\n\n" +
+               "CVE ID: " + advisory.getId() + "\n" +
+               "Title: " + advisory.getTitle() + "\n" +
+               "Base Severity: " + advisory.getSeverity() + "\n" +
+               "Description: " + advisory.getDescription();
+    }
 }

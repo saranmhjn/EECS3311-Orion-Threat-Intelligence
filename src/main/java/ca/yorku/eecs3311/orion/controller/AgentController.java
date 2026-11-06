@@ -141,4 +141,25 @@ public class AgentController {
         notifyObservers("IOCS_EXTRACTED", results.size());
         return results;
     }
+    /**
+     * Retrieves an advisory by ID and requests an AI-generated executive summary.
+     * Maps to Feature F02 and Sequence Diagram SD-01.
+     * 
+     * @param cveId The CVE identifier.
+     * @return The executive summary.
+     */
+    /*@ 
+      @ requires cveId != null && cveId.length() > 0;
+      @ ensures \result != null;
+      @*/
+    public String summarizeAdvisory(String cveId) {
+        ThreatAdvisory advisory = advisoryRepo.findById(cveId);
+        if (advisory == null) {
+            return "Error: Advisory with ID " + cveId + " not found in local database.";
+        }
+        
+        String summary = agentFacade.summarizeAdvisory(advisory);
+        notifyObservers("SUMMARY_GENERATED", cveId);
+        return summary;
+    }
 }

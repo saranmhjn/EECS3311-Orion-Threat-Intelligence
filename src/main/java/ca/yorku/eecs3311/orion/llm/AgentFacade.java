@@ -66,4 +66,23 @@ public class AgentFacade {
     public ToolManager getToolManager() {
         return this.toolManager;
     }
+    /**
+     * Generates an executive summary for a threat advisory.
+     * Maps to Feature F02 and Use Case UC-02.
+     * 
+     * @param advisory The ThreatAdvisory to summarize.
+     * @return The AI-generated executive summary.
+     */
+    /*@ 
+      @ requires advisory != null;
+      @ ensures \result != null;
+      @*/
+    public String summarizeAdvisory(ThreatAdvisory advisory) {
+        try {
+            String prompt = promptBuilder.buildSummaryPrompt(advisory);
+            return llmClient.generate(prompt);
+        } catch (Exception e) {
+            return "Summarization Error: " + e.getMessage();
+        }
+    }
 }
