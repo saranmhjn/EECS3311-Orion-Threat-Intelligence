@@ -106,4 +106,22 @@ public class AgentController {
         }
         return success;
     }
+    /**
+     * Compiles and exports threat briefings to the local disk.
+     * Maps to Feature F07 and Use Case UC-06.
+     * 
+     * @param advisories The list of advisories to export.
+     * @param destinationPath The local path where the file should be saved.
+     */
+    /*@ 
+      @ requires advisories != null && destinationPath != null;
+      @*/
+    public boolean exportThreatBriefing(List<ThreatAdvisory> advisories, String destinationPath) {
+        ca.yorku.eecs3311.orion.util.ReportExporter exporter = new ca.yorku.eecs3311.orion.util.ReportExporter();
+        boolean success = exporter.exportToMarkdown(advisories, destinationPath);
+        if (success) {
+            notifyObservers("REPORT_EXPORTED", destinationPath);
+        }
+        return success;
+    }
 }
