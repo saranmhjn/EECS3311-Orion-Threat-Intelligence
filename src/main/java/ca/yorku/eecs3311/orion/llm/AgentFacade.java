@@ -5,7 +5,6 @@ import ca.yorku.eecs3311.orion.tool.LogParserTool;
 import ca.yorku.eecs3311.orion.tool.ToolManager;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * The Facade pattern entry point for all non-deterministic AI capabilities.

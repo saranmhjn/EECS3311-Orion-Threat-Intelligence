@@ -230,4 +230,30 @@ public class AgentController {
         notifyObservers("GAP_ANALYSIS_EVALUATED", cveId);
         return analysis;
     }
+
+    /**
+     * Correlates internal audit logs with threat indicators.
+     * Maps to Feature F04 and Use Case UC-03[cite: 5, 17].
+     * 
+     * @param filePath Path to the local log file.
+     * @return List of detected anomalies.
+     */
+    /*@ 
+      @ requires filePath != null;
+      @ ensures \result != null;
+      @*/
+    @SuppressWarnings("unchecked")
+    public List<String> correlateLogs(String filePath) {
+        try {
+            java.util.Map<String, Object> args = new java.util.HashMap<>();
+            args.put("filePath", filePath);
+            
+            List<String> anomalies = (List<String>) agentFacade.getToolManager().executeTool("LogParserTool", args);
+            notifyObservers("LOGS_CORRELATED", anomalies.size());
+            return anomalies;
+        } catch (Exception e) {
+            notifyObservers("LOG_ERROR", e.getMessage());
+            return new java.util.ArrayList<>();
+        }
+    }
 }
