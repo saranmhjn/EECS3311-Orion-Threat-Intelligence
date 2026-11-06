@@ -184,4 +184,27 @@ public class AgentController {
         notifyObservers("TRIAGE_EVALUATED", cveId);
         return triageResult;
     }
+
+    /**
+     * Generates a mitigation playbook for a stored threat advisory.
+     * Maps to Feature F05 and Sequence Diagram SD-03[cite: 8, 27, 34].
+     * 
+     * @param cveId The CVE identifier.
+     * @param environmentProfile The local enterprise infrastructure profile.
+     * @return The generated mitigation playbook text.
+     */
+    /*@ 
+      @ requires cveId != null && environmentProfile != null;
+      @ ensures \result != null;
+      @*/
+    public String generateMitigationPlaybook(String cveId, String environmentProfile) {
+        ThreatAdvisory advisory = advisoryRepo.findById(cveId);
+        if (advisory == null) {
+            return "Error: Advisory with ID " + cveId + " not found in local database.";
+        }
+        
+        String playbook = agentFacade.planMitigation(advisory, environmentProfile);
+        notifyObservers("MITIGATION_GENERATED", cveId);
+        return playbook;
+    }
 }

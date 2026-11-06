@@ -66,6 +66,7 @@ public class AgentFacade {
     public ToolManager getToolManager() {
         return this.toolManager;
     }
+
     /**
      * Generates an executive summary for a threat advisory.
      * Maps to Feature F02 and Use Case UC-02.
@@ -85,6 +86,7 @@ public class AgentFacade {
             return "Summarization Error: " + e.getMessage();
         }
     }
+
     /**
      * Evaluates a threat advisory against organizational infrastructure for dynamic triage.
      * Maps to Feature F09 and Use Case UC-04[cite: 10, 20].
@@ -103,6 +105,27 @@ public class AgentFacade {
             return llmClient.generate(prompt);
         } catch (Exception e) {
             return "Triage Evaluation Error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Generates an automated mitigation playbook for a specific threat advisory.
+     * Maps to Feature F05 and Use Case UC-04[cite: 8, 20].
+     * 
+     * @param advisory The target ThreatAdvisory.
+     * @param env The target environment configuration.
+     * @return The AI-generated mitigation playbook.
+     */
+    /*@ 
+      @ requires advisory != null && env != null;
+      @ ensures \result != null;
+      @*/
+    public String planMitigation(ThreatAdvisory advisory, String env) {
+        try {
+            String prompt = promptBuilder.buildMitigationPrompt(advisory, env);
+            return llmClient.generate(prompt);
+        } catch (Exception e) {
+            return "Mitigation Planning Error: " + e.getMessage();
         }
     }
 }

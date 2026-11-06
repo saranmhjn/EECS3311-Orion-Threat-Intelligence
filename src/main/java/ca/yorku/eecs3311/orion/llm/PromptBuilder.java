@@ -45,15 +45,24 @@ public class PromptBuilder {
     
     /**
      * Builds a prompt to generate a defensive mitigation playbook.
+     * Maps to Feature F05[cite: 8, 34].
+     * 
+     * @param advisory The threat advisory requiring mitigation.
+     * @param env The enterprise infrastructure profile.
+     * @return A constrained prompt string.
      */
-    /*@
+    /*@ 
       @ requires advisory != null && env != null;
       @ ensures \result != null && \result.length() > 0;
       @*/
     public String buildMitigationPrompt(ThreatAdvisory advisory, String env) {
-        return "Create step-by-step mitigation plan for " + advisory.getId() + 
-               " given enterprise infrastructure: " + env;
+        return "Create a step-by-step technical mitigation playbook for vulnerability " + advisory.getId() + 
+               " (" + advisory.getTitle() + ")\n" +
+               "Vulnerability Description: " + advisory.getDescription() + "\n\n" +
+               "Target Enterprise Environment: " + env + "\n" +
+               "Provide clear remediation steps, including specific configuration changes or firewall rules.";
     }
+
     /**
      * Builds a prompt for automated threat bulletin summarization.
      * Maps to Feature F02.
@@ -73,6 +82,7 @@ public class PromptBuilder {
                "Base Severity: " + advisory.getSeverity() + "\n" +
                "Description: " + advisory.getDescription();
     }
+    
     /**
      * Builds a prompt for dynamic vulnerability triage and priority scoring.
      * Maps to Feature F09.
