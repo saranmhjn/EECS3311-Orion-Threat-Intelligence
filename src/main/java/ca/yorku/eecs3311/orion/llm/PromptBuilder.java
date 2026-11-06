@@ -73,4 +73,25 @@ public class PromptBuilder {
                "Base Severity: " + advisory.getSeverity() + "\n" +
                "Description: " + advisory.getDescription();
     }
+    /**
+     * Builds a prompt for dynamic vulnerability triage and priority scoring.
+     * Maps to Feature F09.
+     * 
+     * @param advisory The threat advisory to evaluate.
+     * @param techStack The enterprise infrastructure profile (e.g., "Windows Server, AWS Cloud").
+     * @return A constrained prompt string.
+     */
+    /*@ 
+      @ requires advisory != null && techStack != null;
+      @ ensures \result != null && \result.length() > 0;
+      @*/
+    public String buildAdvancedTriagePrompt(ThreatAdvisory advisory, String techStack) {
+        return "Perform a dynamic vulnerability triage and assign a customized priority score " +
+               "(CRITICAL, HIGH, MEDIUM, LOW) based on the following advisory and target infrastructure:\n\n" +
+               "CVE ID: " + advisory.getId() + "\n" +
+               "Base Severity: " + advisory.getSeverity() + "\n" +
+               "Description: " + advisory.getDescription() + "\n\n" +
+               "Target Enterprise Tech Stack: " + techStack + "\n" +
+               "Provide the calibrated priority score and a brief tactical justification.";
+    }
 }

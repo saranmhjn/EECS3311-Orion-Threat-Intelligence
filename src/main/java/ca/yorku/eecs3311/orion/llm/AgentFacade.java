@@ -85,4 +85,24 @@ public class AgentFacade {
             return "Summarization Error: " + e.getMessage();
         }
     }
+    /**
+     * Evaluates a threat advisory against organizational infrastructure for dynamic triage.
+     * Maps to Feature F09 and Use Case UC-04[cite: 10, 20].
+     * 
+     * @param advisory The ThreatAdvisory to evaluate.
+     * @param techStack The enterprise infrastructure profile.
+     * @return The AI-generated triage assessment and score.
+     */
+    /*@ 
+      @ requires advisory != null && techStack != null;
+      @ ensures \result != null;
+      @*/
+    public String evaluateDynamicTriage(ThreatAdvisory advisory, String techStack) {
+        try {
+            String prompt = promptBuilder.buildAdvancedTriagePrompt(advisory, techStack);
+            return llmClient.generate(prompt);
+        } catch (Exception e) {
+            return "Triage Evaluation Error: " + e.getMessage();
+        }
+    }
 }

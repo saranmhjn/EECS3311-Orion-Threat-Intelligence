@@ -162,4 +162,26 @@ public class AgentController {
         notifyObservers("SUMMARY_GENERATED", cveId);
         return summary;
     }
+    /**
+     * Evaluates an advisory's priority score against a target infrastructure profile.
+     * Maps to Feature F09 and Sequence Diagram SD-03[cite: 10, 27].
+     * 
+     * @param cveId The CVE identifier.
+     * @param techStack The local enterprise environment profile.
+     * @return The customized priority assessment.
+     */
+    /*@ 
+      @ requires cveId != null && techStack != null;
+      @ ensures \result != null;
+      @*/
+    public String evaluateAdvisoryTriage(String cveId, String techStack) {
+        ThreatAdvisory advisory = advisoryRepo.findById(cveId);
+        if (advisory == null) {
+            return "Error: Advisory with ID " + cveId + " not found in local database.";
+        }
+        
+        String triageResult = agentFacade.evaluateDynamicTriage(advisory, techStack);
+        notifyObservers("TRIAGE_EVALUATED", cveId);
+        return triageResult;
+    }
 }
