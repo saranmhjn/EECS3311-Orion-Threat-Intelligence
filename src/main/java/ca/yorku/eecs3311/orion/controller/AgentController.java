@@ -10,11 +10,14 @@ import ca.yorku.eecs3311.orion.llm.AgentFacade;
 import ca.yorku.eecs3311.orion.llm.GeminiLLMClient;
 import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 import ca.yorku.eecs3311.orion.repository.AdvisoryRepository;
+import ca.yorku.eecs3311.orion.observer.SecurityObserver;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The central deterministic orchestrator for the Orion Threat Intelligence system.
+ * Acts as the Subject in the Observer Pattern to notify boundary layers of state changes.
  */
 public class AgentController {
 
@@ -22,63 +25,85 @@ public class AgentController {
     private NvdApiClient apiClient;
     private AdvisoryParserFactory parserFactory;
     private AgentFacade agentFacade;
-    
-    // Added the command execution manager
     private CommandManager commandManager;
+    
+    // Observer list for broadcasting asynchronous events
+    private List<SecurityObserver> observers;
 
     /*@ public invariant advisoryRepo != null; @*/
     /*@ public invariant apiClient != null; @*/
     /*@ public invariant parserFactory != null; @*/
     /*@ public invariant agentFacade != null; @*/
     /*@ public invariant commandManager != null; @*/
+    /*@ public invariant observers != null; @*/
 
-    /*@ 
-      @ requires dbManager != null;
-      @*/
+    /*@ requires dbManager != null; @*/
     public AgentController(DatabaseManager dbManager) {
         this.advisoryRepo = new AdvisoryRepository(dbManager.getConnection());
         this.apiClient = new NvdApiClient();
         this.parserFactory = new AdvisoryParserFactory();
         this.agentFacade = new AgentFacade(new GeminiLLMClient());
-        
-        // Initialize the command manager to track defensive actions
         this.commandManager = new CommandManager();
+        this.observers = new ArrayList<>();
+    }
+
+    /**
+     * Registers a new observer (like the OrionGUI) to listen for security events.
+     */
+    /*@ requires observer != null; @*/
+    public void addObserver(SecurityObserver observer) {
+        this.observers.add(observer);
+    }
+
+    /**
+     * Broadcasts an event to all registered listeners.
+     */
+    /*@ requires eventType != null && eventType.length() > 0; @*/
+    private void notifyObservers(String eventType, Object data) {
+        for (SecurityObserver observer : observers) {
+            observer.onSecurityEvent(eventType, data);
+        }
     }
 
     /*@ requires source != null && source.length() > 0; @*/
     public void syncFeeds(String source) {
         try {
+            // Notify GUI that sync has started
+            notifyObservers("SYNC_STARTED", source);
+            
             String rawData = apiClient.fetchRawAdvisories();
             AdvisoryParser parser = parserFactory.createParser("JSON");
             List<ThreatAdvisory> advisories = parser.parse(rawData);
             advisoryRepo.saveAll(advisories);
-            System.out.println("Successfully synchronized " + advisories.size() + " advisories from " + source);
+            
+            // Notify GUI that sync was completely successful, passing the count
+            notifyObservers("SYNC_COMPLETE", advisories.size());
+            
         } catch (Exception e) {
-            System.err.println("Failed to sync feeds: " + e.getMessage());
+            // Notify GUI of the error so it can show a popup, rather than crashing
+            notifyObservers("SYNC_ERROR", e.getMessage());
         }
     }
 
-    /*@
-      @ requires query != null && query.length() > 0;
-      @ ensures \result != null;
-      @*/
+    /*@ requires query != null && query.length() > 0; @*/
     public String handleNaturalQuery(String query) {
         return agentFacade.processGoal(query);
     }
     
-    /**
-     * Executes an AI-generated security mitigation.
-     * Maps to Feature F05 and SD-03.
-     */
     /*@ requires cmd != null; @*/
     public boolean executeCommand(SecurityCommand cmd) {
-        return commandManager.invoke(cmd);
+        boolean success = commandManager.invoke(cmd);
+        if (success) {
+            notifyObservers("COMMAND_EXECUTED", cmd.getDescription());
+        }
+        return success;
     }
     
-    /**
-     * Rolls back the last executed security mitigation.
-     */
     public boolean undoLastCommand() {
-        return commandManager.undoLast();
+        boolean success = commandManager.undoLast();
+        if (success) {
+            notifyObservers("COMMAND_UNDONE", "Previous action rolled back.");
+        }
+        return success;
     }
 }
