@@ -10,10 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Handles all database persistence and retrieval for ThreatAdvisories.
- * Implements real SQL queries to support Feature F08 (Historical Threat Repository Search).
- */
 public class AdvisoryRepository {
 
     private Connection dbConnection;
@@ -29,14 +25,14 @@ public class AdvisoryRepository {
         createTableIfNotExists();
     }
 
-    /**
-     * Ensures the SQLite table exists on startup.
-     */
     private void createTableIfNotExists() {
         String createTableSQL = "CREATE TABLE IF NOT EXISTS threat_advisories (" +
                 "id TEXT PRIMARY KEY, " +
                 "title TEXT, " +
                 "severity TEXT, " +
+                "vendor TEXT, " +
+                "product TEXT, " +
+                "threat_type TEXT, " +
                 "description TEXT)";
         try (PreparedStatement pstmt = dbConnection.prepareStatement(createTableSQL)) {
             pstmt.execute();
@@ -45,34 +41,43 @@ public class AdvisoryRepository {
         }
     }
 
-    /**
-     * Persists a list of threat advisories into the database.
-     */
     /*@ requires advisories != null; @*/
     public void saveAll(List<ThreatAdvisory> advisories) {
-        String insertSQL = "INSERT OR REPLACE INTO threat_advisories (id, title, severity, description) VALUES (?, ?, ?, ?)";
+        String insertSQL = "INSERT OR REPLACE INTO threat_advisories (id, title, severity, vendor, product, threat_type, description) VALUES (?, ?, ?, ?, ?, ?, ?)";
         
-        try (PreparedStatement pstmt = dbConnection.prepareStatement(insertSQL)) {
-            for (ThreatAdvisory advisory : advisories) {
-                pstmt.setString(1, advisory.getId());
-                pstmt.setString(2, advisory.getTitle());
-                pstmt.setString(3, advisory.getSeverity());
-                pstmt.setString(4, advisory.getDescription());
-                pstmt.executeUpdate();
+        try {
+            dbConnection.setAutoCommit(false); 
+            try (PreparedStatement pstmt = dbConnection.prepareStatement(insertSQL)) {
+                for (ThreatAdvisory advisory : advisories) {
+                    pstmt.setString(1, advisory.getId());
+                    pstmt.setString(2, advisory.getTitle());
+                    pstmt.setString(3, advisory.getSeverity());
+                    pstmt.setString(4, advisory.getVendor());
+                    pstmt.setString(5, advisory.getProduct());
+                    pstmt.setString(6, advisory.getThreatType());
+                    pstmt.setString(7, advisory.getDescription());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
             }
+            dbConnection.commit(); 
+            dbConnection.setAutoCommit(true);
         } catch (SQLException e) {
+            try {
+                dbConnection.rollback();
+                dbConnection.setAutoCommit(true);
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
             e.printStackTrace();
         }
     }
 
-    /**
-     * Finds a single threat advisory by its unique CVE ID.
-     */
     /*@ 
       @ requires cveId != null && cveId.length() > 0;
       @*/
     public ThreatAdvisory findById(String cveId) {
-        String querySQL = "SELECT id, title, severity, description FROM threat_advisories WHERE id = ?";
+        String querySQL = "SELECT id, title, severity, vendor, product, threat_type, description FROM threat_advisories WHERE id = ?";
         try (PreparedStatement pstmt = dbConnection.prepareStatement(querySQL)) {
             pstmt.setString(1, cveId);
             ResultSet rs = pstmt.executeQuery();
@@ -82,6 +87,9 @@ public class AdvisoryRepository {
                     rs.getString("id"),
                     rs.getString("title"),
                     rs.getString("severity"),
+                    rs.getString("vendor"),
+                    rs.getString("product"),
+                    rs.getString("threat_type"),
                     rs.getString("description")
                 );
             }
@@ -91,13 +99,10 @@ public class AdvisoryRepository {
         return null;
     }
 
-    /**
-     * Retrieves all threat advisories currently stored in the database.
-     */
     /*@ ensures \result != null; @*/
     public List<ThreatAdvisory> findAll() {
         List<ThreatAdvisory> results = new ArrayList<>();
-        String querySQL = "SELECT id, title, severity, description FROM threat_advisories";
+        String querySQL = "SELECT id, title, severity, vendor, product, threat_type, description FROM threat_advisories";
         
         try (PreparedStatement pstmt = dbConnection.prepareStatement(querySQL)) {
             ResultSet rs = pstmt.executeQuery();
@@ -106,26 +111,26 @@ public class AdvisoryRepository {
                     rs.getString("id"),
                     rs.getString("title"),
                     rs.getString("severity"),
+                    rs.getString("vendor"),
+                    rs.getString("product"),
+                    rs.getString("threat_type"),
                     rs.getString("description")
                 ));
             }
         } catch (SQLException e) {
+            System.err.println("[Database Error] Failed to fetch advisories: " + e.getMessage());
             e.printStackTrace();
         }
         return results;
     }
 
-    /**
-     * Finds a list of advisories matching specific filter criteria.
-     * Implements Feature F08 (Filter Historical Advisory Repository).
-     */
     /*@ 
       @ requires filter != null;
       @ ensures \result != null;
       @*/
     public List<ThreatAdvisory> findByCriteria(AdvisoryFilter filter) {
         List<ThreatAdvisory> results = new ArrayList<>();
-        StringBuilder querySQL = new StringBuilder("SELECT id, title, severity, description FROM threat_advisories WHERE 1=1");
+        StringBuilder querySQL = new StringBuilder("SELECT id, title, severity, vendor, product, threat_type, description FROM threat_advisories WHERE 1=1");
         
         if (filter.getSeverityThreshold() != null && !filter.getSeverityThreshold().isEmpty()) {
             querySQL.append(" AND severity = ?");
@@ -142,6 +147,9 @@ public class AdvisoryRepository {
                     rs.getString("id"),
                     rs.getString("title"),
                     rs.getString("severity"),
+                    rs.getString("vendor"),
+                    rs.getString("product"),
+                    rs.getString("threat_type"),
                     rs.getString("description")
                 ));
             }

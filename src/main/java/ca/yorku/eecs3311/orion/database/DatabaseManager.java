@@ -52,6 +52,9 @@ public class DatabaseManager {
                 + "id TEXT PRIMARY KEY, "
                 + "title TEXT NOT NULL, "
                 + "severity TEXT, "
+                + "vendor TEXT, "
+                + "product TEXT, "
+                + "threat_type TEXT, "
                 + "description TEXT"
                 + ");";
 

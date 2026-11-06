@@ -21,22 +21,31 @@ public class CisaKevParser implements AdvisoryParser {
         JsonNode vulnerabilities = root.path("vulnerabilities");
 
         if (vulnerabilities.isArray()) {
-            // Read backwards to grab the 15 most recently added threats
-            int count = 0;
-            for (int i = vulnerabilities.size() - 1; i >= 0 && count < 100; i--) {
+            for (int i = vulnerabilities.size() - 1; i >= 0; i--) {
                 JsonNode vuln = vulnerabilities.get(i);
-                
+
                 String id = vuln.path("cveID").asText("UNKNOWN");
                 String title = vuln.path("vulnerabilityName").asText("Unknown Threat");
-                
-                // CISA KEV doesn't use CVSS scores; presence on this list implies critical active exploitation
-                String severity = "CRITICAL (KEV)"; 
-                
-                String description = vuln.path("shortDescription").asText() + 
-                                     " Required Action: " + vuln.path("requiredAction").asText();
-                
-                advisories.add(new ThreatAdvisory(id, title, severity, description));
-                count++;
+                String vendor = vuln.path("vendorProject").asText("Unknown");
+                String product = vuln.path("product").asText("Unknown");
+                String ransomware = vuln.path("knownRansomwareCampaignUse").asText("Unknown");
+                String notes = vuln.path("notes").asText("").toLowerCase();
+                String descRaw = vuln.path("shortDescription").asText();
+
+                String threatType;
+                if (notes.contains("zero-day") || descRaw.toLowerCase().contains("zero-day")) {
+                    threatType = "Zero-Day";
+                } else if ("Known".equalsIgnoreCase(ransomware)) {
+                    threatType = "Ransomware";
+                } else {
+                    threatType = "Active Exploit";
+                }
+
+                String severity = "CRITICAL";
+                String description = descRaw + " | Action: " + vuln.path("requiredAction").asText();
+
+                // FIX: Now using the new 7-argument constructor
+                advisories.add(new ThreatAdvisory(id, title, severity, vendor, product, threatType, description));
             }
         }
         return advisories;

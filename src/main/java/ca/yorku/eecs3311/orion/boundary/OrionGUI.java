@@ -11,10 +11,10 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
@@ -59,18 +59,31 @@ public class OrionGUI extends Application implements SecurityObserver {
         threatTable = new TableView<>();
         threatTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
-        // Define columns for ThreatAdvisory
-        TableColumn<ThreatAdvisory, String> idCol = new TableColumn<>("CVE ID / Title");
-        idCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getId())); // Adjust method name if needed (e.g. getCveId())
-        
-        TableColumn<ThreatAdvisory, String> severityCol = new TableColumn<>("Severity");
-        severityCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getSeverity()));
-        
-        TableColumn<ThreatAdvisory, String> descCol = new TableColumn<>("Description");
-        descCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+       TableColumn<ThreatAdvisory, String> idCol = new TableColumn<>("CVE ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idCol.setPrefWidth(120);
 
-        threatTable.getColumns().addAll(idCol, severityCol, descCol);
-        threatTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        TableColumn<ThreatAdvisory, String> vendorCol = new TableColumn<>("Vendor");
+        vendorCol.setCellValueFactory(new PropertyValueFactory<>("vendor"));
+        vendorCol.setPrefWidth(110);
+
+        TableColumn<ThreatAdvisory, String> productCol = new TableColumn<>("Product");
+        productCol.setCellValueFactory(new PropertyValueFactory<>("product"));
+        productCol.setPrefWidth(130);
+
+        TableColumn<ThreatAdvisory, String> typeCol = new TableColumn<>("Threat Type");
+        typeCol.setCellValueFactory(new PropertyValueFactory<>("threatType"));
+        typeCol.setPrefWidth(130);
+
+        TableColumn<ThreatAdvisory, String> sevCol = new TableColumn<>("Severity");
+        sevCol.setCellValueFactory(new PropertyValueFactory<>("severity"));
+        sevCol.setPrefWidth(90);
+
+        TableColumn<ThreatAdvisory, String> descCol = new TableColumn<>("Description");
+        descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+        descCol.setPrefWidth(300);
+
+        threatTable.getColumns().setAll(idCol, vendorCol, productCol, typeCol, sevCol, descCol);
         
         queryInput = new TextField();
         queryInput.setPromptText("Ask the AI about the threat landscape (e.g., 'What are zero-day threats?')...");
@@ -249,13 +262,13 @@ public class OrionGUI extends Application implements SecurityObserver {
      * Fulfills the SecurityObserver contract. 
      * Handles background events triggered by the AgentController.
      */
-    @Override
+  @Override
     public void onSecurityEvent(String eventType, Object data) {
         Platform.runLater(() -> {
             if ("SYNC_COMPLETE".equals(eventType)) {
                 displayArea.appendText("[System] Sync completed successfully. " + data + " records processed.\n");
                 
-                // NEW: Refresh the table view with the newly synced data
+                // Refresh table with all stored advisories from database
                 List<ThreatAdvisory> updatedThreats = controller.getStoredAdvisories();
                 displayThreats(updatedThreats);
                 
