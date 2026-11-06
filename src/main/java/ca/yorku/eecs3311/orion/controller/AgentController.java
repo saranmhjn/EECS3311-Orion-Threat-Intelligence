@@ -21,6 +21,7 @@ import java.util.List;
  * The central deterministic orchestrator for the Orion Threat Intelligence system.
  * Acts as the Subject in the Observer Pattern to notify boundary layers of state changes.
  */
+@SuppressWarnings("unused")
 public class AgentController {
 
     private AdvisoryRepository advisoryRepo;

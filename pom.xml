@@ -24,12 +24,6 @@
         <artifactId>jackson-databind</artifactId>
         <version>2.16.1</version>
     </dependency>
-    <!-- JavaFX for Graphical User Interface -->
-    <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-controls</artifactId>
-        <version>21.0.2</version>
-    </dependency>
     <!-- JUnit 5 for Unit Testing -->
     <dependency>
         <groupId>org.junit.jupiter</groupId>

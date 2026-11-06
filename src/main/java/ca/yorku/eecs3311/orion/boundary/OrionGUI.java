@@ -7,30 +7,39 @@ import ca.yorku.eecs3311.orion.observer.SecurityObserver;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.util.Duration;
 
+import java.io.File;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Modern, glossy Cyber Threat Intelligence visual workspace.
- * Features a dynamic custom vector logo, dual-row grid alignment, 
- * multi-select dropdown filtering, and an optimized 70/30 split layout.
+ * Features a single-row action grid, integrated table controls, 
+ * fast-hover tooltips, and AI-native output rendering.
  */
 public class OrionGUI extends Application implements SecurityObserver {
 
@@ -42,6 +51,9 @@ public class OrionGUI extends Application implements SecurityObserver {
     private WebView carouselWebView; 
     private StringBuilder chatHistoryHtml = new StringBuilder();
 
+    private ObservableList<ThreatAdvisory> masterData = FXCollections.observableArrayList();
+    private FilteredList<ThreatAdvisory> filteredData;
+
     @Override
     public void init() throws Exception {
         DatabaseManager dbManager = new DatabaseManager();
@@ -49,105 +61,213 @@ public class OrionGUI extends Application implements SecurityObserver {
         this.controller.addObserver(this);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Orion Threat Intelligence | AI Assistant");
         primaryStage.setResizable(true);
 
-        // --- 1. CODE-BASED CYBER VECTOR LOGO ---
+        // --- SET APPLICATION WINDOW & TASKBAR ICON ---
+        try {
+            InputStream iconStream = getClass().getResourceAsStream("/logo.png");
+            if (iconStream == null) {
+                File file = new File("logo.png");
+                if (file.exists()) {
+                    iconStream = new java.io.FileInputStream(file);
+                }
+            }
+            if (iconStream != null) {
+                primaryStage.getIcons().add(new Image(iconStream));
+            }
+        } catch (Exception e) {
+            // Fallback gracefully if icon cannot be loaded
+        }
+
+        // --- 1. DYNAMIC BRAND LOGO ---
         HBox brandingContainer = new HBox(15);
         brandingContainer.setAlignment(Pos.CENTER);
         brandingContainer.setPadding(new Insets(10, 0, 15, 0));
 
-        StackPane vectorLogo = new StackPane();
-        vectorLogo.setPrefSize(50, 50);
+        Node finalLogo;
+        try {
+            InputStream logoStream = getClass().getResourceAsStream("/logo.png");
+            if (logoStream != null) {
+                Image logoImg = new Image(logoStream);
+                ImageView logoView = new ImageView(logoImg);
+                
+                // INCREASED SIZES FOR A PROMINENT LOGO
+                logoView.setFitWidth(180);
+                logoView.setFitHeight(180);
+                logoView.setPreserveRatio(true);
+                logoView.setSmooth(true);
+                
+                finalLogo = logoView;
+            } else {
+                throw new Exception("PNG not found");
+            }
+        } catch (Exception e) {
+            StackPane vectorLogo = new StackPane();
+            vectorLogo.setPrefSize(50, 50);
 
-        Circle outerOrbit = new Circle(24);
-        outerOrbit.setFill(Color.TRANSPARENT);
-        outerOrbit.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#00f2fe")),
-                new Stop(1, Color.web("#e94057"))));
-        outerOrbit.setStrokeWidth(2.5);
-        outerOrbit.setStyle("-fx-effect: dropshadow(gaussian, rgba(0, 242, 254, 0.45), 6, 0, 0, 0);");
+            Circle outerOrbit = new Circle(24);
+            outerOrbit.setFill(Color.TRANSPARENT);
+            outerOrbit.setStroke(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, Color.web("#00f2fe")),
+                    new Stop(1, Color.web("#e94057"))));
+            outerOrbit.setStrokeWidth(2.5);
+            outerOrbit.setStyle("-fx-effect: dropshadow(gaussian, rgba(0, 242, 254, 0.45), 6, 0, 0, 0);");
 
-        Circle innerShield = new Circle(18);
-        innerShield.setFill(Color.web("#161233"));
-        innerShield.setStroke(Color.web("#8a2387"));
-        innerShield.setStrokeWidth(1.5);
+            Circle innerShield = new Circle(18);
+            innerShield.setFill(Color.web("#161233"));
+            innerShield.setStroke(Color.web("#8a2387"));
+            innerShield.setStrokeWidth(1.5);
 
-        Label crestText = new Label("O");
-        crestText.setStyle("-fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, #e94057, 5, 0, 0, 0);");
+            Label crestText = new Label("O");
+            crestText.setStyle("-fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, #e94057, 5, 0, 0, 0);");
 
-        vectorLogo.getChildren().addAll(outerOrbit, innerShield, crestText);
-        brandingContainer.getChildren().add(vectorLogo);
+            vectorLogo.getChildren().addAll(outerOrbit, innerShield, crestText);
+            finalLogo = vectorLogo;
+        }
+        
+        brandingContainer.getChildren().add(finalLogo);
 
         VBox titleArea = new VBox(2);
         titleArea.setAlignment(Pos.CENTER_LEFT);
-        Label title = new Label("O R I O N   ·   T H R E A T   I N T E L L I G E N C E");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 2);");
+        Label title1 = new Label("ORION");
+        title1.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 2);");
+        Label title2 = new Label("THREAT INTELLIGENCE");
+        title2.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 2);");
         Label subtitle = new Label("What can I help you investigate today?");
         subtitle.setStyle("-fx-font-size: 18px; -fx-text-fill: #a0a0b5; -fx-font-weight: bold;");
-        titleArea.getChildren().addAll(title, subtitle);
+        titleArea.getChildren().addAll(title1, title2, subtitle);
         brandingContainer.getChildren().add(titleArea);
 
-        // --- 2. THE THREAT TABLE ---
+        // --- 2. TABLE SEARCH & SEVERITY FILTERS (Grouped Together) ---
+        TextField tableSearchField = new TextField();
+        tableSearchField.setPromptText("🔍 Keyword Search (CVE, Vendor, Product, Type)...");
+        tableSearchField.getStyleClass().add("search-input");
+        tableSearchField.setStyle("-fx-background-color: rgba(255,255,255,0.08); -fx-border-color: rgba(0, 242, 254, 0.3); -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 8 15;");
+        HBox.setHgrow(tableSearchField, Priority.ALWAYS); // Expand to fill available space
+
+        MenuButton filterMenu = new MenuButton("Filter by Severity");
+        filterMenu.getStyleClass().add("menu-button");
+        filterMenu.setTooltip(createFastTooltip("Select one or more severities to filter the table"));
+
+        CheckMenuItem critItem = new CheckMenuItem("CRITICAL");
+        CheckMenuItem highItem = new CheckMenuItem("HIGH");
+        CheckMenuItem medItem = new CheckMenuItem("MEDIUM");
+        CheckMenuItem lowItem = new CheckMenuItem("LOW");
+
+        Button resetFilterBtn = new Button("✖ Reset");
+        resetFilterBtn.getStyleClass().add("button");
+        resetFilterBtn.setTooltip(createFastTooltip("Clear all filters"));
+
+        javafx.event.EventHandler<javafx.event.ActionEvent> filterAction = e -> {
+            List<String> selected = new ArrayList<>();
+            if (critItem.isSelected()) selected.add("CRITICAL");
+            if (highItem.isSelected()) selected.add("HIGH");
+            if (medItem.isSelected()) selected.add("MEDIUM");
+            if (lowItem.isSelected()) selected.add("LOW");
+
+            filteredData.setPredicate(adv -> {
+                // Check Keyword Search
+                String keyword = tableSearchField.getText() == null ? "" : tableSearchField.getText().toLowerCase();
+                boolean matchesKeyword = keyword.isEmpty() ||
+                        adv.getId().toLowerCase().contains(keyword) ||
+                        adv.getVendor().toLowerCase().contains(keyword) ||
+                        adv.getProduct().toLowerCase().contains(keyword) ||
+                        adv.getThreatType().toLowerCase().contains(keyword);
+
+                // Check Severity Filter
+                boolean matchesSeverity = selected.isEmpty() || (adv.getSeverity() != null && selected.contains(adv.getSeverity().toUpperCase()));
+
+                return matchesKeyword && matchesSeverity;
+            });
+        };
+
+        critItem.setOnAction(filterAction);
+        highItem.setOnAction(filterAction);
+        medItem.setOnAction(filterAction);
+        lowItem.setOnAction(filterAction);
+        filterMenu.getItems().addAll(critItem, highItem, medItem, lowItem);
+        tableSearchField.textProperty().addListener((obs, oldV, newV) -> filterAction.handle(null));
+
+        resetFilterBtn.setOnAction(e -> {
+            critItem.setSelected(false);
+            highItem.setSelected(false);
+            medItem.setSelected(false);
+            lowItem.setSelected(false);
+            tableSearchField.clear();
+            filteredData.setPredicate(p -> true);
+        });
+
+        HBox tableControls = new HBox(10, tableSearchField, filterMenu, resetFilterBtn);
+        tableControls.setAlignment(Pos.CENTER_LEFT);
+
+        // --- 3. THE THREAT TABLE ---
         threatTable = new TableView<>();
         threatTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
+        
         javafx.util.Callback<TableColumn<ThreatAdvisory, String>, TableCell<ThreatAdvisory, String>> centerCellFactory = col -> {
             TableCell<ThreatAdvisory, String> cell = new TableCell<>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
-                        setText(null);
-                        setGraphic(null);
+                        setText(null); setGraphic(null);
                     } else {
-                        setText(item);
-                        setWrapText(true);
+                        setText(item); setWrapText(true);
                     }
                 }
             };
             cell.setAlignment(Pos.CENTER);
             return cell;
         };
-        
+
         TableColumn<ThreatAdvisory, String> dateCol = new TableColumn<>("Published Date");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("publishedDate"));
-        dateCol.setPrefWidth(110);
+        dateCol.setCellFactory(centerCellFactory);
+        dateCol.setPrefWidth(120);
 
         TableColumn<ThreatAdvisory, String> idCol = new TableColumn<>("CVE ID");
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-        idCol.setPrefWidth(120);
+        idCol.setCellFactory(centerCellFactory);
+        idCol.setPrefWidth(130);
 
         TableColumn<ThreatAdvisory, String> vendorCol = new TableColumn<>("Vendor");
         vendorCol.setCellValueFactory(new PropertyValueFactory<>("vendor"));
-        vendorCol.setPrefWidth(100);
+        vendorCol.setCellFactory(centerCellFactory);
+        vendorCol.setPrefWidth(110);
 
         TableColumn<ThreatAdvisory, String> productCol = new TableColumn<>("Product");
         productCol.setCellValueFactory(new PropertyValueFactory<>("product"));
-        productCol.setPrefWidth(120);
+        productCol.setCellFactory(centerCellFactory);
+        productCol.setPrefWidth(140);
 
         TableColumn<ThreatAdvisory, String> typeCol = new TableColumn<>("Threat Type");
         typeCol.setCellValueFactory(new PropertyValueFactory<>("threatType"));
-        typeCol.setPrefWidth(120);
+        typeCol.setCellFactory(centerCellFactory);
+        typeCol.setPrefWidth(130);
 
         TableColumn<ThreatAdvisory, String> sevCol = new TableColumn<>("Severity");
         sevCol.setCellValueFactory(new PropertyValueFactory<>("severity"));
-        sevCol.setPrefWidth(80);
+        sevCol.setCellFactory(centerCellFactory);
+        sevCol.setPrefWidth(100);
 
-        TableColumn<ThreatAdvisory, String> descCol = new TableColumn<>("Description");
-        descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-        descCol.setPrefWidth(250);
-
-        threatTable.getColumns().setAll(dateCol, idCol, vendorCol, productCol, typeCol, sevCol, descCol);
+        threatTable.getColumns().setAll(dateCol, idCol, vendorCol, productCol, typeCol, sevCol);
         threatTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
-        // --- 3. THE AI DISPLAY & GLOSSY PROMPT FIELD ---
+        filteredData = new FilteredList<>(masterData, p -> true);
+        SortedList<ThreatAdvisory> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(threatTable.comparatorProperty());
+        threatTable.setItems(sortedData);
+
+        VBox leftWorkspace = new VBox(10, tableControls, threatTable);
+        VBox.setVgrow(threatTable, Priority.ALWAYS);
+
+        // --- 4. THE AI DISPLAY & CONTEXTUAL CHAT TOOLS ---
         displayWebView = new WebView();
         webEngine = displayWebView.getEngine();
-        
-        // Auto-scroll logic
         webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED) {
                 webEngine.executeScript("window.scrollTo(0, document.body.scrollHeight);");
@@ -155,15 +275,15 @@ public class OrionGUI extends Application implements SecurityObserver {
         });
         renderWebView(); 
 
-        HBox searchBar = new HBox(12);
-        searchBar.setAlignment(Pos.CENTER_LEFT);
-        searchBar.getStyleClass().add("search-bar");
+        HBox aiSearchBar = new HBox(12);
+        aiSearchBar.setAlignment(Pos.CENTER_LEFT);
+        aiSearchBar.getStyleClass().add("search-bar");
 
-        Label searchIcon = new Label("🔍");
+        Label searchIcon = new Label("✨");
         searchIcon.setStyle("-fx-text-fill: #00f2fe; -fx-font-size: 18px; -fx-padding: 0 0 0 15; -fx-effect: dropshadow(gaussian, rgba(0,242,254,0.3), 5, 0, 0, 0);");
 
         queryInput = new TextField();
-        queryInput.setPromptText("Analyze threats, generate playbooks, or correlate logs...");
+        queryInput.setPromptText("Ask Orion to analyze threats or paste IoCs here...");
         queryInput.getStyleClass().add("search-input");
         queryInput.setPrefHeight(45);
         HBox.setHgrow(queryInput, Priority.ALWAYS);
@@ -173,81 +293,119 @@ public class OrionGUI extends Application implements SecurityObserver {
         sendBtn.setOnAction(e -> handleQuerySubmission());
         queryInput.setOnAction(e -> handleQuerySubmission()); 
 
-        searchBar.getChildren().addAll(searchIcon, queryInput, sendBtn);
-        searchBar.setPadding(new Insets(6, 12, 6, 0));
+        aiSearchBar.getChildren().addAll(searchIcon, queryInput, sendBtn);
+        aiSearchBar.setPadding(new Insets(6, 12, 6, 0));
 
-        VBox rightWorkspace = new VBox(15, displayWebView, searchBar);
+        Button extractBtn = new Button("📤 Extract IoCs");
+        extractBtn.setStyle("-fx-font-size: 12.5px; -fx-padding: 6 12;");
+        extractBtn.setTooltip(createFastTooltip("Extract IPs, Hashes, and Domains from the text above"));
+        extractBtn.setOnAction(e -> {
+            String text = queryInput.getText();
+            if (text.isEmpty()) { showError("Please paste text containing IPs/Hashes in the query box first."); return; }
+            chatHistoryHtml.append("<div style='margin: 15px 0; text-align: right;'>")
+                           .append("<div style='display: inline-block; background: linear-gradient(135deg, rgba(0,242,254,0.15), rgba(79,172,254,0.05)); border: 1px solid rgba(0,242,254,0.2); padding: 12px 18px; border-radius: 18px 18px 4px 18px; color: #ffffff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: left; max-width: 80%;'>")
+                           .append("<b style='color: #00f2fe; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;'>You (IoC Input)</b>")
+                           .append(escapeHtml(text))
+                           .append("</div></div>");
+            queryInput.clear();
+            renderWebView();
+
+            appendSystemLog("Processing input for Indicators of Compromise...");
+            new Thread(() -> {
+                List<String> iocs = controller.extractIocsFromText(text);
+                Platform.runLater(() -> {
+                    if (iocs == null || iocs.isEmpty()) {
+                        displaySummary("### IoC Extraction\n\nNo active Indicators of Compromise found in the provided text.");
+                    } else {
+                        displaySummary("### IoC Extraction\n\n**Extracted Indicators:**\n- " + String.join("\n- ", iocs));
+                    }
+                });
+            }).start();
+        });
+
+        Button correlateBtn = new Button("📊 Correlate Logs");
+        correlateBtn.setStyle("-fx-font-size: 12.5px; -fx-padding: 6 12;");
+        correlateBtn.setTooltip(createFastTooltip("Select and scan a local audit log for threats"));
+        correlateBtn.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select Audit Log File for Correlation");
+            
+            // FIX: Explicitly set initial directory to user home or current project folder 
+            // so Windows doesn't spawn an uncontrolled system explorer window.
+            fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
+            
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Log Files", "*.log", "*.txt", "*.json", "*.csv"));
+            File selectedFile = fileChooser.showOpenDialog(primaryStage);
+            
+            if (selectedFile != null) {
+                appendSystemLog("Parsing logs from: " + selectedFile.getName() + "...");
+                new Thread(() -> {
+                    List<String> anomalies = controller.correlateLogs(selectedFile.getAbsolutePath());
+                    Platform.runLater(() -> {
+                        if (anomalies == null || anomalies.isEmpty()) {
+                            displaySummary("### Log Correlation: " + selectedFile.getName() + "\n\nNo anomalies or threat signatures detected.");
+                        } else {
+                            displaySummary("### Log Correlation: " + selectedFile.getName() + "\n\n**Anomalies Detected:**\n- " + String.join("\n- ", anomalies));
+                        }
+                    });
+                }).start();
+            }
+        });
+
+        HBox chatActions = new HBox(12, correlateBtn, extractBtn);
+        chatActions.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox rightWorkspace = new VBox(12, displayWebView, aiSearchBar, chatActions);
         VBox.setVgrow(displayWebView, Priority.ALWAYS);
-        rightWorkspace.setPadding(new Insets(10));
+        rightWorkspace.setPadding(new Insets(0, 0, 0, 5));
 
         SplitPane splitPane = new SplitPane();
         splitPane.setOrientation(javafx.geometry.Orientation.HORIZONTAL); 
-        splitPane.getItems().addAll(threatTable, rightWorkspace);
-        // UPDATED: 70/30 Split layout for wider table visibility
+        splitPane.getItems().addAll(leftWorkspace, rightWorkspace);
         splitPane.setDividerPositions(0.70); 
 
-        // --- 4. ALIGNED ACTION BUTTONS (GRID LAYOUT) ---
+        // --- 5. SINGLE-ROW ACTION BUTTONS (7-COLUMN GRID) ---
         GridPane actionGrid = new GridPane();
         actionGrid.setHgap(12);
-        actionGrid.setVgap(12);
         actionGrid.setPadding(new Insets(0, 0, 15, 0));
 
-        ColumnConstraints col1 = new ColumnConstraints(); col1.setPercentWidth(14.28);
-        ColumnConstraints col2 = new ColumnConstraints(); col2.setPercentWidth(14.28);
-        ColumnConstraints col3 = new ColumnConstraints(); col3.setPercentWidth(14.28);
-        ColumnConstraints col4 = new ColumnConstraints(); col4.setPercentWidth(14.28);
-        ColumnConstraints col5 = new ColumnConstraints(); col5.setPercentWidth(14.28);
-        ColumnConstraints col6 = new ColumnConstraints(); col6.setPercentWidth(14.28);
-        ColumnConstraints col7 = new ColumnConstraints(); col7.setPercentWidth(14.28);
-        actionGrid.getColumnConstraints().addAll(col1, col2, col3, col4, col5, col6, col7);
+        ColumnConstraints col = new ColumnConstraints(); 
+        col.setPercentWidth(14.28); // 100% / 7 buttons = 14.28%
+        actionGrid.getColumnConstraints().addAll(col, col, col, col, col, col, col);
+
+        Button syncBtn = new Button("🔄 Sync CISA KEV");
+        syncBtn.setMaxWidth(Double.MAX_VALUE);
+        syncBtn.setTooltip(createFastTooltip("Ingest latest Known Exploited Vulnerabilities from CISA"));
+        syncBtn.setOnAction(e -> { appendSystemLog("Initiating CISA KEV sync..."); new Thread(() -> controller.syncFeeds("CISA")).start(); });
+
+        Button syncNistBtn = new Button("🔄 Sync NIST Feed");
+        syncNistBtn.setMaxWidth(Double.MAX_VALUE);
+        syncNistBtn.setTooltip(createFastTooltip("Ingest latest CVEs from the NIST National Vulnerability Database"));
+        syncNistBtn.setOnAction(e -> { appendSystemLog("Initiating NIST NVD sync..."); new Thread(() -> controller.syncFeeds("NIST")).start(); });
 
         Button summaryBtn = new Button("✨ Summarize Selected");
         summaryBtn.setMaxWidth(Double.MAX_VALUE);
-        summaryBtn.setTooltip(new Tooltip("Generate an executive AI summary of the selected CVE"));
+        summaryBtn.setTooltip(createFastTooltip("Generate an executive AI summary of the selected CVE"));
         summaryBtn.setOnAction(e -> executeAdvisoryAction("Generating AI summary", id -> controller.summarizeAdvisory(id)));
 
         Button mitigateBtn = new Button("🛡️ Generate Mitigation");
         mitigateBtn.setMaxWidth(Double.MAX_VALUE);
-        mitigateBtn.setTooltip(new Tooltip("Draft an enterprise remediation playbook for the selected threat"));
+        mitigateBtn.setTooltip(createFastTooltip("Draft an enterprise remediation playbook for the selected threat"));
         mitigateBtn.setOnAction(e -> executeAdvisoryAction("Generating mitigation playbook", id -> controller.generateMitigationPlaybook(id, "Standard Enterprise Environment")));
 
         Button triageBtn = new Button("⚡ Auto-Triage");
         triageBtn.setMaxWidth(Double.MAX_VALUE);
-        triageBtn.setTooltip(new Tooltip("Evaluate severity against your specific cloud/server environment"));
+        triageBtn.setTooltip(createFastTooltip("Evaluate severity against your specific cloud/server environment"));
         triageBtn.setOnAction(e -> executeAdvisoryAction("Evaluating dynamic triage", id -> controller.evaluateAdvisoryTriage(id, "Windows Server, AWS Cloud")));
 
         Button gapBtn = new Button("🔍 Gap Analysis");
         gapBtn.setMaxWidth(Double.MAX_VALUE);
-        gapBtn.setTooltip(new Tooltip("Analyze potential bypasses in your Firewall and EDR solutions"));
+        gapBtn.setTooltip(createFastTooltip("Analyze potential bypasses in your Firewall and EDR solutions"));
         gapBtn.setOnAction(e -> executeAdvisoryAction("Evaluating security gaps", id -> controller.evaluateSecurityGaps(id, List.of("Firewall", "EDR"))));
-
-        Button correlateBtn = new Button("📊 Correlate Logs");
-        correlateBtn.setMaxWidth(Double.MAX_VALUE);
-        correlateBtn.setTooltip(new Tooltip("Scan local audit logs for known threat indicators"));
-        correlateBtn.setOnAction(e -> {
-            appendSystemLog("Correlating internal logs...");
-            new Thread(() -> {
-                List<String> anomalies = controller.correlateLogs("");
-                Platform.runLater(() -> appendSystemLog("Anomalies Found:\n" + String.join("\n", anomalies)));
-            }).start();
-        });
-
-        Button extractBtn = new Button("📤 Extract IoCs");
-        extractBtn.setMaxWidth(Double.MAX_VALUE);
-        extractBtn.setTooltip(new Tooltip("Extract and defang IPs, Hashes, and Domains from the query input box"));
-        extractBtn.setOnAction(e -> {
-            String text = queryInput.getText();
-            if (text.isEmpty()) { showError("Please paste text containing IPs/Hashes in the query box first."); return; }
-            appendSystemLog("Extracting IoCs from text...");
-            new Thread(() -> {
-                List<String> iocs = controller.extractIocsFromText(text);
-                Platform.runLater(() -> appendSystemLog("Extracted IoCs:\n" + String.join("\n", iocs)));
-            }).start();
-        });
 
         Button exportBtn = new Button("📄 Export Briefing");
         exportBtn.setMaxWidth(Double.MAX_VALUE);
-        exportBtn.setTooltip(new Tooltip("Export selected advisories to a Markdown briefing report"));
+        exportBtn.setTooltip(createFastTooltip("Export selected advisories to a Markdown briefing report"));
         exportBtn.setOnAction(e -> {
             List<ThreatAdvisory> selected = threatTable.getSelectionModel().getSelectedItems();
             if (selected.isEmpty()) { showError("Select at least one advisory to export."); return; }
@@ -258,79 +416,16 @@ public class OrionGUI extends Application implements SecurityObserver {
             }).start();
         });
 
-        actionGrid.add(summaryBtn, 0, 0);
-        actionGrid.add(mitigateBtn, 1, 0);
-        actionGrid.add(triageBtn, 2, 0);
-        actionGrid.add(gapBtn, 3, 0);
-        actionGrid.add(correlateBtn, 4, 0);
-        actionGrid.add(extractBtn, 5, 0);
+        // Insert all 7 buttons into Row 0
+        actionGrid.add(syncBtn, 0, 0);
+        actionGrid.add(syncNistBtn, 1, 0);
+        actionGrid.add(summaryBtn, 2, 0);
+        actionGrid.add(mitigateBtn, 3, 0);
+        actionGrid.add(triageBtn, 4, 0);
+        actionGrid.add(gapBtn, 5, 0);
         actionGrid.add(exportBtn, 6, 0);
 
-        Button syncBtn = new Button("🔄 Sync CISA KEV");
-        syncBtn.setMaxWidth(Double.MAX_VALUE);
-        syncBtn.setTooltip(new Tooltip("Ingest latest Known Exploited Vulnerabilities from CISA"));
-        syncBtn.setOnAction(e -> { appendSystemLog("Initiating CISA KEV sync..."); new Thread(() -> controller.syncFeeds("CISA")).start(); });
-
-        Button syncNistBtn = new Button("🔄 Sync NIST Feed");
-        syncNistBtn.setMaxWidth(Double.MAX_VALUE);
-        syncNistBtn.setTooltip(new Tooltip("Ingest latest CVEs from the NIST National Vulnerability Database"));
-        syncNistBtn.setOnAction(e -> { appendSystemLog("Initiating NIST NVD sync..."); new Thread(() -> controller.syncFeeds("NIST")).start(); });
-
-        // --- NEW: MULTI-SELECT DROPDOWN FILTER (GUI-Side Fast Filter) ---
-        MenuButton filterMenu = new MenuButton("⚠️ Filter Severity");
-        filterMenu.setMaxWidth(Double.MAX_VALUE);
-        filterMenu.getStyleClass().add("menu-button"); // Bind to new CSS below
-        filterMenu.setTooltip(new Tooltip("Select one or more severities to filter the table instantly"));
-
-        CheckMenuItem critItem = new CheckMenuItem("CRITICAL");
-        CheckMenuItem highItem = new CheckMenuItem("HIGH");
-        CheckMenuItem medItem = new CheckMenuItem("MEDIUM");
-        CheckMenuItem lowItem = new CheckMenuItem("LOW");
-
-        javafx.event.EventHandler<javafx.event.ActionEvent> filterAction = e -> {
-            List<String> selected = new ArrayList<>();
-            if (critItem.isSelected()) selected.add("CRITICAL");
-            if (highItem.isSelected()) selected.add("HIGH");
-            if (medItem.isSelected()) selected.add("MEDIUM");
-            if (lowItem.isSelected()) selected.add("LOW");
-
-            if (selected.isEmpty()) {
-                displayThreats(controller.getStoredAdvisories());
-            } else {
-                List<ThreatAdvisory> all = controller.getStoredAdvisories();
-                List<ThreatAdvisory> filtered = new ArrayList<>();
-                for (ThreatAdvisory adv : all) {
-                    if (adv.getSeverity() != null && selected.contains(adv.getSeverity().toUpperCase())) {
-                        filtered.add(adv);
-                    }
-                }
-                displayThreats(filtered);
-            }
-        };
-
-        critItem.setOnAction(filterAction);
-        highItem.setOnAction(filterAction);
-        medItem.setOnAction(filterAction);
-        lowItem.setOnAction(filterAction);
-        filterMenu.getItems().addAll(critItem, highItem, medItem, lowItem);
-
-        Button resetFilterBtn = new Button("✖ Reset Filter");
-        resetFilterBtn.setMaxWidth(Double.MAX_VALUE);
-        resetFilterBtn.setTooltip(new Tooltip("Clear all filters and display the full database"));
-        resetFilterBtn.setOnAction(e -> {
-            critItem.setSelected(false);
-            highItem.setSelected(false);
-            medItem.setSelected(false);
-            lowItem.setSelected(false);
-            displayThreats(controller.getStoredAdvisories());
-        });
-
-        actionGrid.add(syncBtn, 0, 1);
-        actionGrid.add(syncNistBtn, 1, 1);
-        actionGrid.add(filterMenu, 5, 1);
-        actionGrid.add(resetFilterBtn, 6, 1);
-
-        // --- 5. ENDLESS THEMED CAROUSEL WEBVIEW ---
+        // --- 6. ENDLESS THEMED CAROUSEL WEBVIEW ---
         carouselWebView = new WebView();
         carouselWebView.setMinHeight(34);
         carouselWebView.setPrefHeight(34);
@@ -353,19 +448,16 @@ public class OrionGUI extends Application implements SecurityObserver {
         footer.setAlignment(Pos.CENTER);
         footer.setPadding(new Insets(5, 0, 0, 0));
 
-        // --- 6. ROOT SETUP & STYLES ---
+        // --- 7. ROOT SETUP & STYLES ---
         VBox root = new VBox(10, brandingContainer, actionGrid, splitPane, carouselWebView, footer);
         root.setPadding(new Insets(20, 20, 10, 20));
         VBox.setVgrow(splitPane, Priority.ALWAYS);
         Scene scene = new Scene(root, 1400, 850);
 
         String css = ".root { -fx-background-color: linear-gradient(to bottom right, #0a081a, #161233, #1c142c); -fx-font-family: 'Segoe UI', sans-serif; }"
-            
-            /* UPDATED: Buttons now have 14.5px font size and tighter 8 16 padding to fix bulky look */
             + ".button { -fx-background-color: linear-gradient(to right, rgba(138, 35, 135, 0.4), rgba(233, 64, 87, 0.4)); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14.5px; -fx-border-color: rgba(255,255,255,0.25); -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 8 16; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 3); }"
             + ".button:hover { -fx-background-color: linear-gradient(to right, rgba(138, 35, 135, 0.65), rgba(233, 64, 87, 0.65)); -fx-border-color: rgba(255,255,255,0.45); }"
             
-            /* NEW: Match MenuButton to standard button styling */
             + ".menu-button { -fx-background-color: linear-gradient(to right, rgba(138, 35, 135, 0.4), rgba(233, 64, 87, 0.4)); -fx-border-color: rgba(255,255,255,0.25); -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 3 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 3); }"
             + ".menu-button:hover { -fx-background-color: linear-gradient(to right, rgba(138, 35, 135, 0.65), rgba(233, 64, 87, 0.65)); -fx-border-color: rgba(255,255,255,0.45); }"
             + ".menu-button > .label { -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14.5px; }"
@@ -374,7 +466,7 @@ public class OrionGUI extends Application implements SecurityObserver {
             + ".menu-item:focused { -fx-background-color: rgba(233, 64, 87, 0.5); }"
 
             + ".search-bar { -fx-background-color: linear-gradient(to bottom right, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)); -fx-border-color: rgba(0, 242, 254, 0.35); -fx-border-radius: 35; -fx-background-radius: 35; -fx-effect: dropshadow(gaussian, rgba(0, 242, 254, 0.25), 12, 0.5, 0, 0); }"
-            + ".search-input { -fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 15px; -fx-prompt-text-fill: #85859e; }"
+            + ".search-input { -fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 14.5px; -fx-prompt-text-fill: #85859e; }"
             + ".search-input:focused { -fx-background-color: transparent; }"
             + ".send-btn { -fx-background-color: linear-gradient(to bottom right, #00f2fe, #4facfe); -fx-text-fill: #0a081a; -fx-border-radius: 50em; -fx-background-radius: 50em; -fx-min-width: 42px; -fx-min-height: 42px; -fx-font-size: 18px; -fx-font-weight: 900; -fx-padding: 0; -fx-effect: dropshadow(gaussian, rgba(0,242,254,0.4), 8, 0, 0, 2); -fx-cursor: hand; }"
             + ".send-btn:hover { -fx-background-color: linear-gradient(to bottom right, #24f4ff, #62b8ff); -fx-effect: dropshadow(gaussian, rgba(0,242,254,0.6), 12, 0, 0, 2); }"
@@ -407,6 +499,17 @@ public class OrionGUI extends Application implements SecurityObserver {
         primaryStage.show();
     }
 
+    /** 
+     * Helper to create fast-rendering tooltips (100ms delay instead of the sluggish 1000ms default)
+     */
+    private Tooltip createFastTooltip(String message) {
+        Tooltip tooltip = new Tooltip(message);
+        tooltip.setShowDelay(Duration.millis(100)); 
+        tooltip.setHideDelay(Duration.millis(100));
+        tooltip.setShowDuration(Duration.seconds(15));
+        return tooltip;
+    }
+
     private void handleQuerySubmission() {
         String query = queryInput.getText();
         if (query.trim().isEmpty()) return;
@@ -435,8 +538,7 @@ public class OrionGUI extends Application implements SecurityObserver {
 
     public void displayThreats(List<ThreatAdvisory> threats) {
         Platform.runLater(() -> {
-            ObservableList<ThreatAdvisory> data = FXCollections.observableArrayList(threats);
-            threatTable.setItems(data);
+            masterData.setAll(threats);
         });
     }
 
