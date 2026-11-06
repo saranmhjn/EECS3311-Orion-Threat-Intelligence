@@ -121,6 +121,9 @@ public class OrionCLI {
                 }
                 break;
             case "clear":
+                // ANSI escape sequence to wipe screen buffer and reset cursor to top-left
+                System.out.print("\u001b[H\u001b[2J");
+                System.out.flush();
                 printBanner();
                 break;
             default:

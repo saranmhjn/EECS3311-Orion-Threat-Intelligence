@@ -13,12 +13,10 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -297,16 +295,40 @@ public class OrionGUI extends Application implements SecurityObserver {
             }).start();
         });
 
+        // Button correlateBtn = new Button("📊 Correlate Logs");
+        // correlateBtn.setStyle("-fx-font-size: 12.5px; -fx-padding: 6 12;");
+        // correlateBtn.setTooltip(createFastTooltip("Select and scan a local audit log for threats"));
+        // correlateBtn.setOnAction(e -> {
+        //     FileChooser fileChooser = new FileChooser();
+        //     fileChooser.setTitle("Select Audit Log File for Correlation");
+            
+        //     // FIX: Explicitly set initial directory to user home or current project folder 
+        //     // so Windows doesn't spawn an uncontrolled system explorer window.
+            
+        //     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Log Files", "*.log", "*.txt", "*.json", "*.csv"));
+        //     File selectedFile = fileChooser.showOpenDialog(primaryStage);
+            
+        //     if (selectedFile != null) {
+        //         appendSystemLog("Parsing logs from: " + selectedFile.getName() + "...");
+        //         new Thread(() -> {
+        //             List<String> anomalies = controller.correlateLogs(selectedFile.getAbsolutePath());
+        //             Platform.runLater(() -> {
+        //                 if (anomalies == null || anomalies.isEmpty()) {
+        //                     displaySummary("### Log Correlation: " + selectedFile.getName() + "\n\nNo anomalies or threat signatures detected.");
+        //                 } else {
+        //                     displaySummary("### Log Correlation: " + selectedFile.getName() + "\n\n**Anomalies Detected:**\n- " + String.join("\n- ", anomalies));
+        //                 }
+        //             });
+        //         }).start();
+        //     }
+        // });
+
         Button correlateBtn = new Button("📊 Correlate Logs");
         correlateBtn.setStyle("-fx-font-size: 12.5px; -fx-padding: 6 12;");
         correlateBtn.setTooltip(createFastTooltip("Select and scan a local audit log for threats"));
         correlateBtn.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select Audit Log File for Correlation");
-            
-            // FIX: Explicitly set initial directory to user home or current project folder 
-            // so Windows doesn't spawn an uncontrolled system explorer window.
-            fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
             
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Log Files", "*.log", "*.txt", "*.json", "*.csv"));
             File selectedFile = fileChooser.showOpenDialog(primaryStage);
