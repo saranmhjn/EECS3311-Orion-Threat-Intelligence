@@ -27,10 +27,24 @@ public class PromptBuilder {
       @ requires query != null && context != null;
       @ ensures \result != null && \result.length() > 0;
       @*/
+   /**
+     * Builds a prompt for general threat landscape querying.
+     * 
+     * @param query The user's natural language question.
+     * @param context The conversational or retrieved database context.
+     * @return A formatted prompt string.
+     */
+    /*@
+      @ requires query != null && context != null;
+      @ ensures \result != null && \result.length() > 0;
+      @*/
     public String buildQueryPrompt(String query, String context) {
-        return "Context History:\n" + context + 
+        return "You are Orion, an autonomous Cyber Threat Intelligence AI assistant. " +
+               "Respond conversationally, accurately, and concisely.\n\n" +
+               "Context History:\n" + context + 
                "\n\nUser Query: " + query + 
-               "\n\nAnalyze the threat landscape based on the above.";
+               "\n\nIf the user is greeting you or asking about your capabilities, answer naturally. " +
+               "If the user is asking a cybersecurity question (like 'what is a zero-day'), explain it clearly without over-analyzing the user's intent.";
     }
 
     /**

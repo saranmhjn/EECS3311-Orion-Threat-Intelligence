@@ -2,6 +2,7 @@ package ca.yorku.eecs3311.orion.boundary;
 
 import ca.yorku.eecs3311.orion.controller.AgentController;
 import ca.yorku.eecs3311.orion.database.DatabaseManager;
+import ca.yorku.eecs3311.orion.model.AdvisoryFilter;
 import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 import ca.yorku.eecs3311.orion.observer.SecurityObserver;
 
@@ -168,12 +169,28 @@ public class OrionGUI extends Application implements SecurityObserver {
                 boolean success = controller.exportThreatBriefing(new java.util.ArrayList<>(selected), "report.md");
                 Platform.runLater(() -> displayArea.appendText(success ? "[System] Export complete.\n" : "[System] Export failed.\n"));
             }).start();
+            
      });
+     Button filterBtn = new Button("Filter Critical (F08)");
+        filterBtn.setOnAction(e -> {
+            displayArea.appendText("[System] Applying historical filter: CRITICAL (KEV)...\n");
+            AdvisoryFilter filter = new AdvisoryFilter();
+            filter.setSeverityThreshold("CRITICAL (KEV)");
+            List<ThreatAdvisory> filtered = controller.searchAdvisories(filter);
+            displayThreats(filtered);
+            displayArea.appendText("[System] Showing " + filtered.size() + " filtered records.\n");
+        });
+
+        Button resetFilterBtn = new Button("Reset Filter");
+        resetFilterBtn.setOnAction(e -> {
+            displayThreats(controller.getStoredAdvisories());
+            displayArea.appendText("[System] Filters reset to all records.\n");
+        });
         
 
         // Layout the buttons horizontally
         HBox row1 = new HBox(10, syncBtn, summaryBtn, mitigateBtn, triageBtn, gapBtn);
-        HBox row2 = new HBox(10, correlateBtn, extractBtn, exportBtn);
+        HBox row2 = new HBox(10, correlateBtn, extractBtn, exportBtn, filterBtn, resetFilterBtn);
         
         // Replace your old VBox root instantiation with this one:
         VBox root = new VBox(10, row1, row2, threatTable, displayArea, queryInput);

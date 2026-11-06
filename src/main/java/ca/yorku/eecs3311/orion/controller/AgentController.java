@@ -8,9 +8,11 @@ import ca.yorku.eecs3311.orion.command.SecurityCommand;
 import ca.yorku.eecs3311.orion.database.DatabaseManager;
 import ca.yorku.eecs3311.orion.llm.AgentFacade;
 import ca.yorku.eecs3311.orion.llm.GeminiLLMClient;
+import ca.yorku.eecs3311.orion.model.AdvisoryFilter;
 import ca.yorku.eecs3311.orion.model.ThreatAdvisory;
 import ca.yorku.eecs3311.orion.repository.AdvisoryRepository;
 import ca.yorku.eecs3311.orion.observer.SecurityObserver;
+import ca.yorku.eecs3311.orion.llm.GroqLLMClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +44,8 @@ public class AgentController {
         this.advisoryRepo = new AdvisoryRepository(dbManager.getConnection());
         this.apiClient = new NvdApiClient();
         this.parserFactory = new AdvisoryParserFactory();
-        this.agentFacade = new AgentFacade(new GeminiLLMClient());
+        //this.agentFacade = new AgentFacade(new GeminiLLMClient());
+        this.agentFacade = new AgentFacade(new GroqLLMClient());
         this.commandManager = new CommandManager();
         this.observers = new ArrayList<>();
     }
@@ -265,5 +268,10 @@ public class AgentController {
     /*@ ensures \result != null; @*/
     public List<ThreatAdvisory> getStoredAdvisories() {
         return advisoryRepo.findAll();
+    }
+
+    /*@ requires filter != null; @*/
+    public List<ThreatAdvisory> searchAdvisories(AdvisoryFilter filter) {
+        return advisoryRepo.findByCriteria(filter);
     }
 }
