@@ -124,4 +124,21 @@ public class AgentController {
         }
         return success;
     }
+    /**
+     * Extracts structured Indicators of Compromise from unstructured threat text.
+     * Maps to Feature F06 and Use Case UC-05.
+     * 
+     * @param rawText Unstructured threat report text.
+     * @return A list of extracted and deduplicated IoCs.
+     */
+    /*@ 
+      @ requires rawText != null;
+      @ ensures \result != null;
+      @*/
+    public List<String> extractIocsFromText(String rawText) {
+        ca.yorku.eecs3311.orion.util.IocExtractor extractor = new ca.yorku.eecs3311.orion.util.IocExtractor();
+        List<String> results = extractor.extractIocs(rawText);
+        notifyObservers("IOCS_EXTRACTED", results.size());
+        return results;
+    }
 }
