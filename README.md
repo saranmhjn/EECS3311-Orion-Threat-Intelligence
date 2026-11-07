@@ -30,8 +30,8 @@ Orion is a dual-mode Cyber Threat Intelligence (CTI) application and AI agent fr
 
 1. **Clone the Repository:**
 ```bash
-git clone [https://github.com/your-username/orion-threat-intelligence.git](https://github.com/your-username/orion-threat-intelligence.git)
-cd orion-threat-intelligence
+git clone [https://github.com/saranmhjn/EECS3311-Orion-Threat-Intelligence.git](https://github.com/saranmhjn/EECS3311-Orion-Threat-Intelligence.git)
+cd EECS3311-Orion-Threat-Intelligence
 ```
 
 2. **Configure Environment Variables:**
@@ -40,16 +40,23 @@ Create a '.env' in the root directory and paste the following code snippet
 GROQ_API_KEY=*your_actual_groq_api_key_here*
 ```
 
+3. **Example Files:**
+Note: Exmaples of environment configuration, report, and log files are available in the *examples/* directory.
+
 ## 🎮 How to Run
 
 1. **Method 1: One-Click Batch Launchers**
-    Simply double-click the respective batch script located in the project root directory. These scripts automatically handle project cleaning, compilation, and dependency resolution:
-    Launch GUI Workspace: Double-click *run_gui.bat*
-    Launch CLI Terminal: Double-click *run_cli.bat*
+  Simply double-click the respective batch script located in the project root directory.
+  ```text
+  Launch GUI Workspace: Double-click run_gui.bat
+  Launch CLI Terminal: Double-click run_cli.bat
+  ```
 
 2. **Method 2: Manual Terminal Execution via Maven**
-    To Launch GUI, Run Command -  *mvn clean compile javafx:run*
-    To Launch CLI, Run Command -  *mvn clean compile org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass="ca.yorku.eecs3311.orion.boundary.OrionCLI"*
+```text
+  Command to Launch GUI - mvn clean compile javafx:run
+  Command to Launch CLI - mvn clean compile org.codehaus.mojo:exec-maven-plugin:3.1.0:java -Dexec.mainClass="ca.yorku.eecs3311.orion.boundary.OrionCLI"
+  ```
 
 ## ⌨️ CLI Command Reference
 | Command | Description |
@@ -63,6 +70,65 @@ GROQ_API_KEY=*your_actual_groq_api_key_here*
 | `query <question>` | Ask Orion AI a natural language security question |
 | `clear` | Reload console and wipe the screen buffer |
 | `exit` | Terminate the CLI session safely |
+
+## 💡 Example Usage
+
+1. **In the CLI Terminal**
+Once you launch `run_cli.bat` and your environment is configured, you can execute commands directly:
+```bash
+orion(cti)> sync cisa
+[*] Synchronizing CISA KEV feed...
+[+] CISA KEV sync complete.
+
+orion(cti)> list 5
+[+] Showing 20 of 1769 cached advisories
+ID            | Severity | Vendor   | Product           | Threat Type
+CVE-2024-1234 | CRITICAL | GitLab   | Community Edition | Zero-Day Exploitation
+
+orion(cti)> summarize CVE-2026-97229
+[*] Querying Orion AI for summary on CVE-2026-97229...
+=== AI EXECUTIVE SUMMARY ===
+### Executive Summary for CVE-2026-97229
+
+**Attack Vector**
+- An unauthenticated attacker submits a specially crafted regular expression in a GitLab CI/CD configuration, triggering an integer overflow or wraparound in the regex engine.
+
+**Operational Impact**
+- Exploitation results in arbitrary code execution on the GitLab server, enabling full system compromise.
+- The flaw can be exploited remotely without credentials, posing a high risk to internet?exposed GitLab instances.
+
+**Affected Systems**
+- All GitLab Community Edition (CE) and Enterprise Edition (EE) deployments that include the vulnerable CI/CD processing component.
+- Versions prior to the vendor?released patch (as detailed in the GitLab security advisory) are impacted, especially when publicly accessible.
+
+orion(cti)>  query What is an APT?
+[*] Orion AI processing query...
+
+=== ORION AI RESPONSE ===
+### General Inquiry
+- **APT** stands for *Advanced Persistent Threat*, a sophisticated, long?term cyber?attack targeting specific organizations.
+- Attackers use stealthy methods, often backed by nation?states, to remain undetected while exfiltrating data.
+- They combine multiple tactics (malware, zero?day exploits, social engineering) and maintain footholds for months or years.
+
+```
+
+2. **In the GUI Application**
+To launch the graphical workspace, double-click `run_gui.bat` or execute `mvn clean compile javafx:run`. Once the glassmorphism workspace loads, you can utilize the top action grids, data tables, and AI output panels for the following features:
+
+| GUI Feature | Action / Workflow | Description |
+| :--- | :--- | :--- |
+| **🔄 Sync Feeds** | Click the **"Sync CISA / NIST"** buttons | Triggers live API ingestion to fetch and cache the latest CVE records into your local SQLite database. |
+| **📋 Filter** | Use the **"Search bar"** or **"Filter by Severity dropdown"** | Real-time filtering of loaded threat advisories by keyword, vendor, or CVSS severity score. |
+| **✨ Summarize** | Select a CVE row -> Click **"Summarize Selected"** | Queries the Groq LLM backend to generate a structured executive summary. |
+| **🛡️ Generate Mitigation** | Select a CVE row -> Click **"Genertae Mitigate"** | Builds an enterprise-grade remediation playbook tailored for the selected vulnerability. |
+| **🔍 Gap Analysis** | Select a CVE row -> Click **Gap Analysis** | Evaluates organizational security gaps and defensive posture against active threat vectors. |
+| **⚡ Auto-Triage** | Select a CVE row -> Click **"Auto Triage"** | Automatically parses system state and active advisories to prioritize high-risk vulnerabilities. |
+| **💬 AI Chat Query** | Type in the natural language query box | Ask custom security or threat intelligence questions directly to the Orion AI agent. |
+| **📊 Export Briefing** | Select a CVE row -> Click **"Export Briefing"** | Generates and saves clean, structured intelligence briefings and markdown summaries locally in the file named *'report.md'* |
+| **📦 Batch Export**| Select multiple rows (use CTRL or SHIFT keys) ->  Click **"Export Briefing"** | Generates and saves clean, structured intelligence briefings and markdown summaries for multiple CVEs locally in the file named *'report.md'* |
+| **📁 Correlate Logs** | Click on **"Correlate Logs"** -> Upload a log file (.txt format preferred) | Scans local log files against threat signatures to detect matches or indicators of compromise, outputs any anomalies detected in the log file. |
+| **🔎 Extract IOCs** | Paste raw unstructured text into chat query bubble | Uses regex and pattern matching to pull Indicators of Compromise (IOC), such as IP Addresses, hashes, and domains out of text blocks. |
+
 
 ## 🏛️ Project Architecture
 Orion is structured using a clean, enterprise-grade separation of concerns across multiple modular layers:
@@ -82,6 +148,7 @@ ca.yorku.eecs3311.orion/
 └── util/           # System-wide formatting, string manipulation, and helper utilities
 ```
 
+
 ## 🤖 AI & Human Collaborative Development
 This project was built through a collaborative human-AI workflow. Below is the documentation of the AI tools utilized during the implementation and development lifecycle:
 
@@ -94,8 +161,8 @@ This project was built through a collaborative human-AI workflow. Below is the d
   * Crafting and refining the custom `.bat` launchers and SQLite integration scripts.
   * Writing documentation, the project `README.md`, and formatting instructions.
 * **Token Cost & Money Cost:** 
-  * *Token Cost:* Standard developer session tier (~150,000 contextual tokens processed across multi-turn refactoring).
-  * *Monetary Cost:* $6.79/month (Google AI Pro).
+  * **Token Cost:** Standard developer session tier (~150,000 contextual tokens processed across multi-turn refactoring).
+  * **Monetary Cost:** $6.79/month (Google AI Pro).
 
 ### 2. Groq Cloud API (Runtime AI Engine)
 * **Tool/Platform:** Groq Developer Console & API SDK
@@ -103,5 +170,5 @@ This project was built through a collaborative human-AI workflow. Below is the d
 * **Development Tasks & Features:** 
   * Integrated directly into the Orion backend (`ca.yorku.eecs3311.orion.llm`) to power real-time AI features: executive threat summaries, automated enterprise mitigation playbooks, environment-specific triage reports, and security gap analyses.
 * **Token Cost & Money Cost:** 
-  * *Token Cost:* Dependent on runtime API inference calls during testing and evaluation.
-  * *Monetary Cost:* $0.00 (Utilized Groq's developer free tier quota).
+  * **Token Cost:** Dependent on runtime API inference calls during testing and evaluation.
+  * **Monetary Cost:** $0.00 (Utilized Groq's developer free tier quota).

@@ -1,0 +1,9 @@
+2026-11-06 08:12:01 [AUTH] Successful login for user 'admin' from 192.168.1.15
+2026-11-06 08:15:22 [NETWORK] Permitted connection to port 443 from 203.0.113.10
+2026-11-06 08:17:45 [AUTH] Failed login for user 'root' from 198.51.100.44
+2026-11-06 08:17:48 [AUTH] Failed login for user 'admin' from 198.51.100.44
+2026-11-06 08:17:51 [AUTH] Failed login for user 'sysadmin' from 198.51.100.44
+2026-11-06 08:17:55 [AUTH] Successful login for user 'admin' from 198.51.100.44
+2026-11-06 08:19:02 [WAF] Blocked request: GET /api/v1/users?id=1' OR '1'='1 HTTP/1.1 from 198.51.100.44
+2026-11-06 08:22:15 [WAF] Alert: Directory traversal detected: GET /../../../../etc/shadow HTTP/1.1 from 203.0.113.88
+2026-11-06 08:30:00 [SYSTEM] Scheduled backup completed successfully.
