@@ -81,3 +81,27 @@ ca.yorku.eecs3311.orion/
 ├── tool/           # Specialized security tools (log correlation & IOC extraction utilities)
 └── util/           # System-wide formatting, string manipulation, and helper utilities
 ```
+
+## 🤖 AI & Human Collaborative Development
+This project was built through a collaborative human-AI workflow. Below is the documentation of the AI tools utilized during the implementation and development lifecycle:
+
+### 1. Google Gemini (Personal AI Collaborator)
+* **Tool/Platform:** Google Gemini
+* **LLM Model Name:** Gemini Pro
+* **Development Tasks & Features:** 
+  * Architectural design assistance for structuring modular Java packages.
+  * Debugging code.
+  * Crafting and refining the custom `.bat` launchers and SQLite integration scripts.
+  * Writing documentation, the project `README.md`, and formatting instructions.
+* **Token Cost & Money Cost:** 
+  * *Token Cost:* Standard developer session tier (~150,000 contextual tokens processed across multi-turn refactoring).
+  * *Monetary Cost:* $6.79/month (Google AI Pro).
+
+### 2. Groq Cloud API (Runtime AI Engine)
+* **Tool/Platform:** Groq Developer Console & API SDK
+* **LLM Model Name:** Llama 3 - openai/gpt-oss-120b; 
+* **Development Tasks & Features:** 
+  * Integrated directly into the Orion backend (`ca.yorku.eecs3311.orion.llm`) to power real-time AI features: executive threat summaries, automated enterprise mitigation playbooks, environment-specific triage reports, and security gap analyses.
+* **Token Cost & Money Cost:** 
+  * *Token Cost:* Dependent on runtime API inference calls during testing and evaluation.
+  * *Monetary Cost:* $0.00 (Utilized Groq's developer free tier quota).
