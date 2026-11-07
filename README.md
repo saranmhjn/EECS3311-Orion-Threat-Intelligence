@@ -41,7 +41,7 @@ GROQ_API_KEY=*your_actual_groq_api_key_here*
 ```
 
 3. **Example Files:**
-Note: Exmaples of environment configuration, report, and log files are available in the *examples/* directory.
+Examples of environment configuration, report, and log files are available in the `examples/` directory.
 
 ## 🎮 How to Run
 
