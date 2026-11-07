@@ -275,7 +275,7 @@ public class OrionGUI extends Application implements SecurityObserver {
             String text = queryInput.getText();
             if (text.isEmpty()) { showError("Please paste text containing IPs/Hashes in the query box first."); return; }
             chatHistoryHtml.append("<div style='margin: 15px 0; text-align: right;'>")
-                           .append("<div style='display: inline-block; background: linear-gradient(135deg, rgba(0,242,254,0.15), rgba(79,172,254,0.05)); border: 1px solid rgba(0,242,254,0.2); padding: 12px 18px; border-radius: 18px 18px 4px 18px; color: #ffffff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: left; max-width: 80%;'>")
+                           .append("<div style='display: inline-block; background: linear-gradient(135deg, rgba(0,242,254,0.15), rgba(79,172,254,0.05)); border: 1px solid rgba(0,242,254,0.2); padding: 12px 18px; border-radius: 18px 18px 4px 18px; color: #ffffff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: left; max-width: 80%; word-wrap: break-word; word-break: break-all;'>")
                            .append("<b style='color: #00f2fe; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;'>You (IoC Input)</b>")
                            .append(escapeHtml(text))
                            .append("</div></div>");
@@ -511,7 +511,7 @@ public class OrionGUI extends Application implements SecurityObserver {
         if (query.trim().isEmpty()) return;
         
         chatHistoryHtml.append("<div style='margin: 15px 0; text-align: right;'>")
-                       .append("<div style='display: inline-block; background: linear-gradient(135deg, rgba(0,242,254,0.15), rgba(79,172,254,0.05)); border: 1px solid rgba(0,242,254,0.2); padding: 12px 18px; border-radius: 18px 18px 4px 18px; color: #ffffff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: left; max-width: 80%;'>")
+                       .append("<div style='display: inline-block; background: linear-gradient(135deg, rgba(0,242,254,0.15), rgba(79,172,254,0.05)); border: 1px solid rgba(0,242,254,0.2); padding: 12px 18px; border-radius: 18px 18px 4px 18px; color: #ffffff; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: left; max-width: 80%; word-wrap: break-word; word-break: break-all;'>")
                        .append("<b style='color: #00f2fe; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;'>You</b>")
                        .append(escapeHtml(query))
                        .append("</div></div>");
@@ -576,7 +576,8 @@ public class OrionGUI extends Application implements SecurityObserver {
 
     private void renderWebView() {
         String fullHtml = "<html><head><style>" +
-                "body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; font-size: 14px; background-color: #121024; color: #e0e0e5; padding: 20px; margin: 0; line-height: 1.5; overflow-x: hidden; }" +
+                "body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; font-size: 14px; background-color: #121024; color: #e0e0e5; padding: 20px; margin: 0; line-height: 1.5; overflow-x: hidden; word-wrap: break-word; overflow-wrap: break-word; }" +
+                "div, p, span, pre, code { max-width: 100%; word-break: break-all; box-sizing: border-box; }" +
                 "::-webkit-scrollbar { width: 10px; }" +
                 "::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }" +
                 "::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #8a2387, #e94057); border-radius: 5px; }" +
