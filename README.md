@@ -26,6 +26,7 @@ Orion is a dual-mode Cyber Threat Intelligence (CTI) application and AI agent fr
 
 ---
 
+
 ## 🛠️ Installation & Setup
 
 1. **Clone the Repository:**
@@ -41,7 +42,7 @@ GROQ_API_KEY=*your_actual_groq_api_key_here*
 ```
 
 3. **Example Files:**
-Examples of environment configuration, report, and log files are available in the `examples/` directory.
+Examples of environment configuration, report, ioc prompt, and log files are available in the `examples/` directory.
 
 ## 🎮 How to Run
 
@@ -172,3 +173,25 @@ This project was built through a collaborative human-AI workflow. Below is the d
 * **Token Cost & Money Cost:** 
   * **Token Cost:** Dependent on runtime API inference calls during testing and evaluation.
   * **Monetary Cost:** $0.00 (Utilized Groq's developer free tier quota).
+
+## 🎥 Video Demonstration Walkthrough
+
+You can watch the complete feature demonstration walkthrough of **Orion Threat Intelligence** on YouTube:
+
+👉 **[Watch the Orion Demonstration on YouTube](https://youtu.be/P0hejUG7d7c?si=8rdHeIDW6OxKnapa)**
+
+### Timestamps:
+* **0:00** - Introduction & Workspace Launch
+* **0:33** - Feature F01: External Threat Advisory Ingestion (CISA & NIST)
+* **1:07** - Feature F02: Automated Threat Bulletin Summarization
+* **1:27** - Feature F03: Natural Language Threat Landscape Querying
+* **2:01** - Feature F04: Insider Risk Log Correlation
+* **2:49** - Feature F05: Automated Mitigation Strategy Generation & Execution
+* **3:28** - Feature F06: Structured Indicator of Compromise (IoC) Extraction
+* **4:18** - Feature F07: Executive Threat Intelligence Report Export
+* **4:50** - Feature F08: Historical Threat Repository Search
+* **5:22** - Feature F09: Dynamic Advisory Triage & Priority Scoring
+* **5:58** - Feature F10: Security Control Gap Analysis
+* **6:24** - New Feature 1: Multi-Select Batch Export
+* **6:58** - New Feature 2: Live Threat News Carousel Footer
+* **7:28** - CLI Terminal Demonstration (Dual-Mode Architecture)

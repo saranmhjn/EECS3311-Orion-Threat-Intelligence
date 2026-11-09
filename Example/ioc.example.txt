@@ -1,0 +1,5 @@
+Copy the following text and paste it into the AI chat input section.
+
+Analyze the following incident report snippet, extract all indicators of compromise (IP addresses, domain names, and file hashes), and provide a summary of recommended remediation steps:
+
+"During our morning SOC triage, we detected suspicious outbound beaconing originating from workstation 192.168.1.105 connecting to the malicious command-and-control domain update-microsoft-security[.]com resolving to IP address 203.0.113.42. Further endpoint forensics on the compromised host identified a dropped backdoor payload with SHA-256 hash e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 and MD5 hash d41d8cd98f00b204e9800998ecf8427e. Please quarantine these artifacts immediately."
